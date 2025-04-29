@@ -56,13 +56,14 @@ senha_input = st.sidebar.text_input("Senha", type="password")
 autenticado = False
 nome_usuario = ""
 
-crm_input_str = str(crm_input).strip()
+# Preparar CRM
 df_usuarios["crm"] = df_usuarios["crm"].astype(str).str.strip()
+crm_input_str = str(crm_input).strip()
 
-user_exists = crm_input_str in df_usuarios["crm"].values
+# Procurar usuário
+user_row = df_usuarios[df_usuarios["crm"] == crm_input_str]
 
-if user_exists:
-    user_row = df_usuarios[df_usuarios["crm"] == crm_input_str]
+if not user_row.empty:
     senha_correta = user_row["senha"].astype(str).values[0].strip()
     nome_usuario = user_row["nome"].values[0]
     if senha_input.strip() == senha_correta:
