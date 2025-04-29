@@ -56,29 +56,22 @@ senha_input = st.sidebar.text_input("Senha", type="password")
 autenticado = False
 nome_usuario = ""
 
-crm_input_str = crm_input.strip()
-user_exists = crm_input_str in df_usuarios["crm"].astype(str).str.strip().values
+crm_input_str = str(crm_input).strip()
+df_usuarios["crm"] = df_usuarios["crm"].astype(str).str.strip()
+
+user_exists = crm_input_str in df_usuarios["crm"].values
 
 if user_exists:
-    user_row = df_usuarios[df_usuarios["crm"].astype(str).str.strip() == crm_input_str]
+    user_row = df_usuarios[df_usuarios["crm"] == crm_input_str]
     senha_correta = user_row["senha"].astype(str).values[0].strip()
     nome_usuario = user_row["nome"].values[0]
     if senha_input.strip() == senha_correta:
         st.sidebar.success(f"Bem-vindo, {nome_usuario}!")
         autenticado = True
     else:
-        st.sidebar.error("Senha incorreta")
+        st.sidebar.error("Senha incorreta.")
 else:
-    st.sidebar.warning("Novo usuário. Cadastre sua senha.")
-    novo_nome = st.sidebar.text_input("Seu nome completo")
-    nova_senha = st.sidebar.text_input("Criar senha", type="password")
-    confirmar = st.sidebar.button("Criar conta")
-
-    if confirmar and novo_nome and nova_senha:
-        novo_usuario = pd.DataFrame([[crm_input, novo_nome, nova_senha]], columns=["crm", "nome", "senha"])
-        df_usuarios = pd.concat([df_usuarios, novo_usuario], ignore_index=True)
-        salvar_planilha(df_usuarios, ws_usuarios)
-        st.sidebar.success("Cadastro criado! Refaça o login.")
+    st.sidebar.error("Contate o chefe da escala para realizar o cadastro.")
 
 # App principal
 st.title("Escala de Plantão")
