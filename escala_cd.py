@@ -48,10 +48,6 @@ except Exception as e:
     st.error(f"Erro ao carregar usuários: {e}")
     st.stop()
 
-# Teste de leitura da planilha de usuários
-st.write("Primeiras linhas da planilha de usuários carregada:")
-st.write(df_usuarios.head())
-
 # Login
 st.sidebar.header("Login")
 crm_input = st.sidebar.text_input("CRM")
@@ -63,13 +59,9 @@ nome_usuario = ""
 # Forçar CRM e senha para texto correto
 # Converte float para int, depois para string (ex: 11384.0 -> "11384")
 df_usuarios["crm"] = df_usuarios["crm"].apply(lambda x: str(int(float(x)))).str.strip()
-df_usuarios["senha"] = df_usuarios["senha"].astype(str).str.strip()
+df_usuarios["senha"] = df_usuarios["senha"].apply(lambda x: str(int(float(x)))).str.strip()
 crm_input_str = str(crm_input).strip()
 senha_input_str = str(senha_input).strip()
-
-# DEBUG FINAL
-st.write("CRM digitado:", repr(crm_input_str))
-st.write("CRMs disponíveis:", df_usuarios["crm"].tolist())
 
 # Procurar usuário com CRM igual
 user_row = df_usuarios[df_usuarios["crm"] == crm_input_str]
