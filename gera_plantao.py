@@ -2,9 +2,9 @@ import pandas as pd
 import gspread
 import json
 import tempfile
+import streamlit as st
 from gspread_dataframe import get_as_dataframe, set_with_dataframe
 from datetime import datetime, timedelta
-import streamlit as st
 
 # Função para conectar ao Google Sheets usando credenciais dos secrets
 def conectar_gspread():
