@@ -48,6 +48,10 @@ except Exception as e:
     st.error(f"Erro ao carregar usuários: {e}")
     st.stop()
 
+# Teste de leitura da planilha de usuários
+st.write("Primeiras linhas da planilha de usuários carregada:")
+st.write(df_usuarios.head())
+
 # Login
 st.sidebar.header("Login")
 crm_input = st.sidebar.text_input("CRM")
