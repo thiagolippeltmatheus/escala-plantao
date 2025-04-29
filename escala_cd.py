@@ -66,6 +66,10 @@ df_usuarios["senha"] = df_usuarios["senha"].astype(str).str.strip()
 crm_input_str = str(crm_input).strip()
 senha_input_str = str(senha_input).strip()
 
+# DEBUG FINAL
+st.write("CRM digitado:", repr(crm_input_str))
+st.write("CRMs disponíveis:", df_usuarios["crm"].tolist())
+
 # Procurar usuário com CRM igual
 user_row = df_usuarios[df_usuarios["crm"] == crm_input_str]
 
