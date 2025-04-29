@@ -1,17 +1,25 @@
 import pandas as pd
 import gspread
+import json
+import tempfile
 from gspread_dataframe import get_as_dataframe, set_with_dataframe
 from datetime import datetime, timedelta
+import streamlit as st
+
+# Função para conectar ao Google Sheets usando credenciais dos secrets
+def conectar_gspread():
+    credenciais_info = json.loads(st.secrets["CREDENCIAIS_JSON"])
+    with tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".json") as temp_file:
+        json.dump(credenciais_info, temp_file)
+        temp_file.flush()
+        return gspread.service_account(filename=temp_file.name)
 
 # Nome das planilhas
 NOME_PLANILHA_ESCALA = 'Escala_Maio_2025'
 NOME_PLANILHA_FIXOS = 'Plantonistas_Fixos_Completo_real'
 
-# Arquivo de credenciais
-ARQUIVO_CREDENCIAIS = 'credenciais.json'
-
-# Conectar ao Google Sheets
-gc = gspread.service_account(filename=ARQUIVO_CREDENCIAIS)
+# Conectar
+gc = conectar_gspread()
 
 # Funções utilitárias
 def carregar_planilha(nome_planilha):
@@ -25,7 +33,6 @@ def salvar_planilha(df, worksheet):
     set_with_dataframe(worksheet, df)
 
 def atualizar_escala_proximos_30_dias():
-    # Tenta carregar a escala existente
     try:
         df_escala, ws_escala = carregar_planilha(NOME_PLANILHA_ESCALA)
     except Exception:

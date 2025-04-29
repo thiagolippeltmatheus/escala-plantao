@@ -1,22 +1,25 @@
 import streamlit as st
 import pandas as pd
 import gspread
+import json
+import tempfile
 from gspread_dataframe import get_as_dataframe, set_with_dataframe
 from datetime import date
-import locale
 
-# Configurar localidade
-locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
+# Função para conectar ao Google Sheets usando credenciais dos secrets
+def conectar_gspread():
+    credenciais_info = json.loads(st.secrets["CREDENCIAIS_JSON"])
+    with tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".json") as temp_file:
+        json.dump(credenciais_info, temp_file)
+        temp_file.flush()
+        return gspread.service_account(filename=temp_file.name)
 
-# Arquivo de credenciais
-ARQUIVO_CREDENCIAIS = 'credenciais.json'
-
-# Nome das planilhas no Google Drive
+# Nome das planilhas
 NOME_PLANILHA_ESCALA = 'Escala_Maio_2025'
 NOME_PLANILHA_USUARIOS = 'usuarios'
 
-# Conectar ao Google Sheets
-gc = gspread.service_account(filename=ARQUIVO_CREDENCIAIS)
+# Conectar
+gc = conectar_gspread()
 
 # Funções para carregar e salvar dados
 def carregar_planilha(nome_planilha):
@@ -29,7 +32,7 @@ def salvar_planilha(df, worksheet):
     worksheet.clear()
     set_with_dataframe(worksheet, df)
 
-# Carregar dados
+# Carregar dados de usuários
 try:
     df_usuarios, ws_usuarios = carregar_planilha(NOME_PLANILHA_USUARIOS)
 except Exception as e:
@@ -84,7 +87,7 @@ if autenticado:
     data_plantoa = st.date_input("Selecione a data do plantão")
     turno = st.selectbox("Selecione o turno", ["manhã", "tarde", "noite", "cinderela"])
 
-    st.markdown(f"**Data selecionada:** {data_plantoa.strftime('%A - %d/%m/%Y')} - **Turno:** {turno.capitalize()}")
+    st.markdown(f"**Data selecionada:** {data_plantoa.strftime('%d/%m/%Y')} - **Turno:** {turno.capitalize()}")
 
     df_turno = df[(df["data"] == data_plantoa) & (df["turno"] == turno)]
     df_usuario_turno = df_turno[df_turno["nome"].fillna("").astype(str).str.lower().str.strip() == nome_usuario.lower().strip()]
