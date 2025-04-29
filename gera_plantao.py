@@ -9,10 +9,16 @@ from datetime import datetime, timedelta
 # Função para conectar ao Google Sheets usando credenciais dos secrets
 def conectar_gspread():
     credenciais_info = json.loads(st.secrets["CREDENCIAIS_JSON"])
+
+    # Corrigir a chave privada para ter quebras de linha reais
+    credenciais_info["private_key"] = credenciais_info["private_key"].replace("\\n", "\n")
+
     with tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".json") as temp_file:
         json.dump(credenciais_info, temp_file)
         temp_file.flush()
-        return gspread.service_account(filename=temp_file.name)
+        gc = gspread.service_account(filename=temp_file.name)
+        return gc
+
 
 # Nome das planilhas
 NOME_PLANILHA_ESCALA = 'Escala_Maio_2025'
