@@ -13,11 +13,16 @@ def conectar_gspread():
     # Corrigir a chave privada para ter quebras de linha reais
     credenciais_info["private_key"] = credenciais_info["private_key"].replace("\\n", "\n")
 
-    with tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".json") as temp_file:
-        json.dump(credenciais_info, temp_file)
-        temp_file.flush()
-        gc = gspread.service_account(filename=temp_file.name)
-        return gc
+    # Criar arquivo temporário
+    temp_file = tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".json")
+    json.dump(credenciais_info, temp_file)
+    temp_file.flush()
+    temp_file.close()
+
+    # Agora conecta ao gspread
+    gc = gspread.service_account(filename=temp_file.name)
+    return gc
+
 # Nome das planilhas
 NOME_PLANILHA_ESCALA = 'Escala_Maio_2025'
 NOME_PLANILHA_USUARIOS = 'usuarios'
