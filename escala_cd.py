@@ -60,8 +60,9 @@ senha_input = st.sidebar.text_input("Senha", type="password")
 autenticado = False
 nome_usuario = ""
 
-# Forçar CRM e senha para texto e remover espaços
-df_usuarios["crm"] = df_usuarios["crm"].astype(str).str.strip()
+# Forçar CRM e senha para texto correto
+# Converte float para int, depois para string (ex: 11384.0 -> "11384")
+df_usuarios["crm"] = df_usuarios["crm"].apply(lambda x: str(int(float(x)))).str.strip()
 df_usuarios["senha"] = df_usuarios["senha"].astype(str).str.strip()
 crm_input_str = str(crm_input).strip()
 senha_input_str = str(senha_input).strip()
