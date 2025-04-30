@@ -93,7 +93,6 @@ NOME_PLANILHA_FIXOS = 'Plantonistas_Fixos_Completo_real'
 # Conectar
 gc = conectar_gspread()
 
-# Funções auxiliares
 def carregar_planilha(nome_planilha):
     sh = gc.open(nome_planilha)
     worksheet = sh.sheet1
@@ -137,7 +136,9 @@ st.title("Escala de Plantão")
 
 if autenticado:
     df, ws_escala = carregar_planilha(NOME_PLANILHA_ESCALA)
-    df["data"] = pd.to_datetime(df["data"], dayfirst=True).dt.date
+    df = df[df["data"].notna()]
+    df["data"] = pd.to_datetime(df["data"], dayfirst=True, errors="coerce").dt.date
+    df = df[df["data"].notna()]
     df["turno"] = df["turno"].str.lower()
 
     data_plantoa = st.date_input("Selecione a data do plantão")
@@ -193,7 +194,6 @@ if autenticado:
                         salvar_planilha(df, ws_escala)
                         st.success("Você reassumiu o plantão. Atualize a página para ver a mudança.")
 
-    # Função administrativa
     if crm_input_str == "21802":
         st.markdown("---")
         if st.button("Regenerar Escala de Plantão para os próximos 30 dias"):
