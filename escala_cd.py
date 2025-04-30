@@ -3,10 +3,10 @@ import pandas as pd
 import gspread
 import json
 import tempfile
-from gspread_dataframe import get_as_dataframe, set_with_dataframe
-from datetime import datetime, timedelta, date
+from gspread_dataframe import get_as_dataframe
+from datetime import datetime
 
-# Função para conectar ao Google Sheets usando credenciais dos secrets
+# Conectar ao Google Sheets
 def conectar_gspread():
     credenciais_info = json.loads(st.secrets["CREDENCIAIS_JSON"])
     credenciais_info["private_key"] = credenciais_info["private_key"].replace("\\n", "\n")
@@ -16,133 +16,32 @@ def conectar_gspread():
     temp_file.close()
     return gspread.service_account(filename=temp_file.name)
 
-# Gera a escala de plantão atualizada para os próximos 30 dias
-import streamlit as st
-import pandas as pd
-import gspread
-import json
-import tempfile
-from gspread_dataframe import get_as_dataframe, set_with_dataframe
-from datetime import datetime, timedelta, date
+def carregar_planilha(nome):
+    sh = gc.open(nome)
+    ws = sh.sheet1
+    df = get_as_dataframe(ws).dropna(how="all")
+    return df, ws
 
-# Função para conectar ao Google Sheets usando credenciais dos secrets
-def conectar_gspread():
-    credenciais_info = json.loads(st.secrets["CREDENCIAIS_JSON"])
-    credenciais_info["private_key"] = credenciais_info["private_key"].replace("\\n", "\n")
-    temp_file = tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".json")
-    json.dump(credenciais_info, temp_file)
-    temp_file.flush()
-    temp_file.close()
-    return gspread.service_account(filename=temp_file.name)
-
-# Gera a escala de plantão atualizada para os próximos 30 dias
-def atualizar_escala_proximos_30_dias():
-    try:
-        df_escala, ws_escala = carregar_planilha(NOME_PLANILHA_ESCALA)
-    except:
-        df_escala = pd.DataFrame(columns=["data", "dia da semana", "turno", "nome", "crm", "status"])
-        ws_escala = gc.open(NOME_PLANILHA_ESCALA).sheet1
-
-    df_fixos, _ = carregar_planilha(NOME_PLANILHA_FIXOS)
-    hoje = datetime.today().date()
-    dias_novos = []
-
-    dias_semana = ["segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo"]
-    turnos = ["manhã", "tarde", "noite"]
-    qtd_plantonistas = {
-        "manhã":   {"SEGUNDA": 9, "TERÇA": 9, "QUARTA": 9, "QUINTA": 9, "SEXTA": 9, "SÁBADO": 8, "DOMINGO": 8},
-        "tarde":   {"SEGUNDA": 9, "TERÇA": 9, "QUARTA": 9, "QUINTA": 9, "SEXTA": 9, "SÁBADO": 8, "DOMINGO": 8},
-        "noite":   {"SEGUNDA": 8, "TERÇA": 7, "QUARTA": 7, "QUINTA": 7, "SEXTA": 7, "SÁBADO": 7, "DOMINGO": 8},
-    }
-
-    for i in range(1, 31):
-        data = hoje + timedelta(days=i)
-        dia_nome = dias_semana[data.weekday()]
-        data_str = data.strftime("%d/%m/%Y")
-
-        for turno in turnos:
-            total_necessario = qtd_plantonistas[turno][dia_nome.upper()]
-            existentes = df_escala[(df_escala["data"] == data_str) & (df_escala["turno"] == turno)]
-            existentes_nomes = existentes["nome"].tolist() if not existentes.empty else []
-            qtd_existentes = len(existentes_nomes)
-
-            if qtd_existentes >= total_necessario:
-                continue
-
-            fixos_sel = df_fixos[(df_fixos["Dia da Semana"].str.upper() == dia_nome.upper()) & (df_fixos["Turno"].str.lower() == turno)]
-            nomes = list(fixos_sel["Nome"])
-            crms = list(fixos_sel["CRM"])
-
-            while len(nomes) < total_necessario:
-                nomes.append("VAGA")
-                crms.append("")
-
-            nomes = nomes[:total_necessario - qtd_existentes]
-            crms = crms[:total_necessario - qtd_existentes]
-
-            for nome, crm in zip(nomes, crms):
-                status = "fixo" if nome != "VAGA" else "livre"
-                dias_novos.append({
-                    "data": data_str,
-                    "dia da semana": dia_nome.lower(),
-                    "turno": turno,
-                    "nome": nome,
-                    "crm": crm,
-                    "status": status
-                })
-
-        if dia_nome.upper() in ["TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"]:
-            if not ((df_escala["data"] == data_str) & (df_escala["turno"] == "cinderela")).any():
-                dias_novos.append({
-                    "data": data_str,
-                    "dia da semana": dia_nome.lower(),
-                    "turno": "cinderela",
-                    "nome": "CINDERELA",
-                    "crm": "",
-                    "status": "livre"
-                })
-
-    if dias_novos:
-        df_novos = pd.DataFrame(dias_novos)
-        df_escala = pd.concat([df_escala, df_novos], ignore_index=True)
-        df_escala = df_escala.drop_duplicates(subset=["data", "turno", "nome", "crm"], keep="first")
-        salvar_planilha(df_escala, ws_escala)
-
-# Nome das planilhas
-NOME_PLANILHA_ESCALA = 'Escala_Maio_2025'
-NOME_PLANILHA_USUARIOS = 'usuarios'
-NOME_PLANILHA_FIXOS = 'Plantonistas_Fixos_Completo_real'
-
-# Conectar
+# Variáveis principais
+NOME_PLANILHA_ESCALA = "Escala_Maio_2025"
+NOME_PLANILHA_USUARIOS = "usuarios"
 gc = conectar_gspread()
-
-def carregar_planilha(nome_planilha):
-    sh = gc.open(nome_planilha)
-    worksheet = sh.sheet1
-    df = get_as_dataframe(worksheet).dropna(how="all")
-    return df, worksheet
-
-def salvar_planilha(df, worksheet):
-    worksheet.clear()
-    set_with_dataframe(worksheet, df)
 
 # Login
 st.sidebar.header("Login")
 crm_input = st.sidebar.text_input("CRM")
 senha_input = st.sidebar.text_input("Senha", type="password")
 
+df_usuarios, _ = carregar_planilha(NOME_PLANILHA_USUARIOS)
+df_usuarios["crm"] = df_usuarios["crm"].apply(lambda x: str(int(float(x)))).str.strip()
+df_usuarios["senha"] = df_usuarios["senha"].apply(lambda x: str(int(float(x)))).str.strip()
+crm_input_str = crm_input.strip()
+senha_input_str = senha_input.strip()
+
 autenticado = False
 nome_usuario = ""
 
-# Dados de usuários
-df_usuarios, ws_usuarios = carregar_planilha(NOME_PLANILHA_USUARIOS)
-df_usuarios["crm"] = df_usuarios["crm"].apply(lambda x: str(int(float(x)))).str.strip()
-df_usuarios["senha"] = df_usuarios["senha"].apply(lambda x: str(int(float(x)))).str.strip()
-crm_input_str = str(crm_input).strip()
-senha_input_str = str(senha_input).strip()
-
 user_row = df_usuarios[df_usuarios["crm"] == crm_input_str]
-
 if not user_row.empty:
     senha_correta = user_row["senha"].values[0]
     nome_usuario = user_row["nome"].values[0]
@@ -158,7 +57,7 @@ else:
 st.title("Escala de Plantão")
 
 if autenticado:
-    df, ws_escala = carregar_planilha(NOME_PLANILHA_ESCALA)
+    df, _ = carregar_planilha(NOME_PLANILHA_ESCALA)
     df = df[df["data"].notna()]
     df["data"] = pd.to_datetime(df["data"], dayfirst=True, errors="coerce").dt.date
     df = df[df["data"].notna()]
@@ -167,10 +66,8 @@ if autenticado:
     data_plantoa = st.date_input("Selecione a data do plantão")
     turno = st.selectbox("Selecione o turno", ["manhã", "tarde", "noite", "cinderela"])
 
-    st.markdown(f"**Data selecionada:** {data_plantoa.strftime('%d/%m/%Y')} - **Turno:** {turno.capitalize()}")
-
     df_turno = df[(df["data"] == data_plantoa) & (df["turno"] == turno)]
-    df_usuario_turno = df_turno[df_turno["nome"].fillna("").astype(str).str.lower().str.strip() == nome_usuario.lower().strip()]
+    df_usuario_turno = df_turno[df_turno["nome"].fillna("").str.lower().str.strip() == nome_usuario.lower().strip()]
 
     if df_turno.empty:
         st.warning("Nenhum plantonista encontrado para essa data e turno.")
@@ -183,7 +80,7 @@ if autenticado:
             with col1:
                 if status == "repasse":
                     st.warning(f"**{nome}** está repassando o plantão.")
-                elif status == "livre" or nome.strip().lower() == "vaga livre":
+                elif status == "livre" or nome.lower() == "vaga livre":
                     st.error("**Vaga disponível**")
                 else:
                     st.success(f"**{nome}** está escalado como `{status}`")
@@ -191,36 +88,30 @@ if autenticado:
             with col2:
                 ja_escalado = not df_usuario_turno.empty
 
-                if (status == "livre" or nome.strip().lower() == "vaga livre") and not ja_escalado:
+                if (status == "livre" or nome.lower() == "vaga livre") and not ja_escalado:
                     if st.button("Pegar vaga", key=f"pegar_{idx}"):
                         df.at[idx, "nome"] = nome_usuario
                         df.at[idx, "status"] = "extra"
-                        salvar_planilha(df, ws_escala)
+                        salvar_planilha(df, _)
                         st.success("Você pegou a vaga com sucesso! Atualize a página para ver a mudança.")
 
                 elif status == "repasse" and not ja_escalado:
                     if st.button("Assumir", key=f"assumir_{idx}"):
                         df.at[idx, "nome"] = nome_usuario
                         df.at[idx, "status"] = "extra"
-                        salvar_planilha(df, ws_escala)
+                        salvar_planilha(df, _)
                         st.success("Você assumiu o plantão com sucesso! Atualize a página para ver a mudança.")
 
-                elif nome_usuario.strip().lower() in nome.strip().lower() and status != "repasse":
+                elif nome_usuario.lower() in nome.lower() and status != "repasse":
                     if st.button("Repassar", key=f"repassar_{idx}"):
                         df.at[idx, "status"] = "repasse"
-                        salvar_planilha(df, ws_escala)
+                        salvar_planilha(df, _)
                         st.warning("Você colocou seu plantão para repasse. Atualize a página para ver a mudança.")
 
-                elif nome_usuario.strip().lower() in nome.strip().lower() and status == "repasse":
+                elif nome_usuario.lower() in nome.lower() and status == "repasse":
                     if st.button("Cancelar repasse", key=f"cancelar_{idx}"):
                         df.at[idx, "status"] = "fixo"
-                        salvar_planilha(df, ws_escala)
+                        salvar_planilha(df, _)
                         st.success("Você reassumiu o plantão. Atualize a página para ver a mudança.")
-
-    if crm_input_str == "21802":
-        st.markdown("---")
-        if st.button("Regenerar Escala de Plantão para os próximos 30 dias"):
-            atualizar_escala_proximos_30_dias()
-            st.success("Escala regenerada com sucesso!")
 else:
-    st.info("Faça login na barra lateral para acessar a escala de plantão.")
+    st.info("Faça login na barra lateral para acessar a escala.")
