@@ -61,22 +61,27 @@ def atualizar_escala_proximos_30_dias():
         data_str = data.strftime("%d/%m/%Y")
 
         for turno in turnos:
-            existe = ((df_escala["data"] == data_str) & (df_escala["turno"] == turno) & (df_escala["dia da semana"] == dia_nome)).any()
-            if existe:
+            total_necessario = qtd_plantonistas[turno][dia_nome.upper()]
+            existentes = df_escala[(df_escala["data"] == data_str) & (df_escala["turno"] == turno)]
+            existentes_nomes = existentes["nome"].tolist() if not existentes.empty else []
+            qtd_existentes = len(existentes_nomes)
+
+            if qtd_existentes >= total_necessario:
                 continue
 
             fixos_sel = df_fixos[(df_fixos["Dia da Semana"].str.upper() == dia_nome.upper()) & (df_fixos["Turno"].str.lower() == turno)]
             nomes = list(fixos_sel["Nome"])
             crms = list(fixos_sel["CRM"])
 
-            total = qtd_plantonistas[turno][dia_nome.upper()]
-
-            while len(nomes) < total:
+            while len(nomes) < total_necessario:
                 nomes.append("VAGA")
                 crms.append("")
 
+            nomes = nomes[:total_necessario - qtd_existentes]
+            crms = crms[:total_necessario - qtd_existentes]
+
             for nome, crm in zip(nomes, crms):
-                status = "fixo" if nome not in ["VAGA"] else "livre"
+                status = "fixo" if nome != "VAGA" else "livre"
                 dias_novos.append({
                     "data": data_str,
                     "dia da semana": dia_nome.lower(),
@@ -86,24 +91,22 @@ def atualizar_escala_proximos_30_dias():
                     "status": status
                 })
 
-        # Adicionar CINDERELA como turno separado
         if dia_nome.upper() in ["TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"]:
-            dias_novos.append({
-                "data": data_str,
-                "dia da semana": dia_nome.lower(),
-                "turno": "cinderela",
-                "nome": "CINDERELA",
-                "crm": "",
-                "status": "livre"
-            })
+            if not ((df_escala["data"] == data_str) & (df_escala["turno"] == "cinderela")).any():
+                dias_novos.append({
+                    "data": data_str,
+                    "dia da semana": dia_nome.lower(),
+                    "turno": "cinderela",
+                    "nome": "CINDERELA",
+                    "crm": "",
+                    "status": "livre"
+                })
 
     if dias_novos:
         df_novos = pd.DataFrame(dias_novos)
         df_escala = pd.concat([df_escala, df_novos], ignore_index=True)
         df_escala = df_escala.drop_duplicates(subset=["data", "turno", "nome", "crm"], keep="first")
         salvar_planilha(df_escala, ws_escala)
-
-
 
 # Nome das planilhas
 NOME_PLANILHA_ESCALA = 'Escala_Maio_2025'
