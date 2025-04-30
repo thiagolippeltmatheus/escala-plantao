@@ -69,24 +69,25 @@ user_row = df_usuarios[df_usuarios["crm"] == crm_input_str]
 if not user_row.empty:
     senha_correta = user_row["senha"].values[0]
     nome_usuario = user_row["nome"].values[0]
+
     if senha_input_str == senha_correta:
-    if senha_input_str == crm_input_str:
-        nova_senha = st.sidebar.text_input("Escolha uma nova senha (apenas números)", type="password")
-        if nova_senha:
-            if nova_senha.isdigit():
-                df_usuarios.loc[df_usuarios["crm"] == crm_input_str, "senha"] = nova_senha
-                salvar_planilha(df_usuarios, ws_usuarios)
-                st.sidebar.success("Senha atualizada com sucesso. Refaça o login.")
-                st.stop()
+        if senha_input_str == crm_input_str:
+            nova_senha = st.sidebar.text_input("Escolha uma nova senha (apenas números)", type="password")
+            if nova_senha:
+                if nova_senha.isdigit():
+                    df_usuarios.loc[df_usuarios["crm"] == crm_input_str, "senha"] = nova_senha
+                    salvar_planilha(df_usuarios, ws_usuarios)
+                    st.sidebar.success("Senha atualizada com sucesso. Refaça o login.")
+                    st.stop()
+                else:
+                    st.sidebar.error("A nova senha deve conter apenas números.")
             else:
-                st.sidebar.error("A nova senha deve conter apenas números.")
+                st.sidebar.warning("Por favor, escolha uma nova senha para continuar.")
         else:
-            st.sidebar.warning("Por favor, escolha uma nova senha para continuar.")
+            st.sidebar.success(f"Bem-vindo, {nome_usuario}!")
+            autenticado = True
     else:
-        st.sidebar.success(f"Bem-vindo, {nome_usuario}!")
-        autenticado = True
-else:
-    st.sidebar.error("Senha incorreta.")
+        st.sidebar.error("Senha incorreta.")
 else:
     st.sidebar.error("Contate o chefe da escala para realizar o cadastro.")
 
