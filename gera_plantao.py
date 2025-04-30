@@ -58,7 +58,7 @@ def atualizar_escala_proximos_30_dias():
     qtd_plantonistas = {
         "manhã":   {"SEGUNDA": 9, "TERÇA": 9, "QUARTA": 9, "QUINTA": 9, "SEXTA": 9, "SÁBADO": 8, "DOMINGO": 8},
         "tarde":   {"SEGUNDA": 9, "TERÇA": 9, "QUARTA": 9, "QUINTA": 9, "SEXTA": 9, "SÁBADO": 8, "DOMINGO": 8},
-        "noite":   {"SEGUNDA": 8, "TERÇA": 8, "QUARTA": 8, "QUINTA": 8, "SEXTA": 8, "SÁBADO": 8, "DOMINGO": 8},
+        "noite":   {"SEGUNDA": 8, "TERÇA": 7, "QUARTA": 7, "QUINTA": 7, "SEXTA": 7, "SÁBADO": 7, "DOMINGO": 7},
     }
 
     for i in range(1, 31):
@@ -83,12 +83,8 @@ def atualizar_escala_proximos_30_dias():
             total = qtd_plantonistas[turno][dia_nome.upper()]
             add_cinderela = False
             if turno == "noite":
-                if dia_nome.upper() in ["SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"]:
+                if dia_nome.upper() in ["TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"]:
                     add_cinderela = True
-                    total = 7
-                elif dia_nome.upper() == "DOMINGO":
-                    add_cinderela = False
-                    total = 8
 
             while len(nomes) < total:
                 nomes.append("VAGA")
