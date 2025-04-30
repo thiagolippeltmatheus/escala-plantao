@@ -194,7 +194,7 @@ if autenticado:
                         st.success("Você reassumiu o plantão. Atualize a página para ver a mudança.")
 
     # Função administrativa
-    if nome_usuario.lower().startswith("thiago"):
+    if crm_input_str == "21802":
         st.markdown("---")
         if st.button("Regenerar Escala de Plantão para os próximos 30 dias"):
             atualizar_escala_proximos_30_dias()
