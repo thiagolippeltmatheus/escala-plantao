@@ -3,10 +3,11 @@ import pandas as pd
 import gspread
 import json
 import tempfile
-from gspread_dataframe import get_as_dataframe
+from gspread_dataframe import get_as_dataframe, set_with_dataframe
 from datetime import datetime
 
 # Conectar ao Google Sheets
+
 def conectar_gspread():
     credenciais_info = json.loads(st.secrets["CREDENCIAIS_JSON"])
     credenciais_info["private_key"] = credenciais_info["private_key"].replace("\\n", "\n")
@@ -21,6 +22,10 @@ def carregar_planilha(nome):
     ws = sh.sheet1
     df = get_as_dataframe(ws).dropna(how="all")
     return df, ws
+
+def salvar_planilha(df, worksheet):
+    worksheet.clear()
+    set_with_dataframe(worksheet, df)
 
 # Variáveis principais
 NOME_PLANILHA_ESCALA = "Escala_Maio_2025"
@@ -57,7 +62,7 @@ else:
 st.title("Escala de Plantão")
 
 if autenticado:
-    df, _ = carregar_planilha(NOME_PLANILHA_ESCALA)
+    df, ws_escala = carregar_planilha(NOME_PLANILHA_ESCALA)
     df = df[df["data"].notna()]
     df["data"] = pd.to_datetime(df["data"], dayfirst=True, errors="coerce").dt.date
     df = df[df["data"].notna()]
@@ -92,26 +97,26 @@ if autenticado:
                     if st.button("Pegar vaga", key=f"pegar_{idx}"):
                         df.at[idx, "nome"] = nome_usuario
                         df.at[idx, "status"] = "extra"
-                        salvar_planilha(df, _)
-                        st.success("Você pegou a vaga com sucesso! Atualize a página para ver a mudança.")
+                        salvar_planilha(df, ws_escala)
+                        df, ws_escala = carregar_planilha(NOME_PLANILHA_ESCALA)
 
                 elif status == "repasse" and not ja_escalado:
                     if st.button("Assumir", key=f"assumir_{idx}"):
                         df.at[idx, "nome"] = nome_usuario
                         df.at[idx, "status"] = "extra"
-                        salvar_planilha(df, _)
-                        st.success("Você assumiu o plantão com sucesso! Atualize a página para ver a mudança.")
+                        salvar_planilha(df, ws_escala)
+                        df, ws_escala = carregar_planilha(NOME_PLANILHA_ESCALA)
 
                 elif nome_usuario.lower() in nome.lower() and status != "repasse":
                     if st.button("Repassar", key=f"repassar_{idx}"):
                         df.at[idx, "status"] = "repasse"
-                        salvar_planilha(df, _)
-                        st.warning("Você colocou seu plantão para repasse. Atualize a página para ver a mudança.")
+                        salvar_planilha(df, ws_escala)
+                        df, ws_escala = carregar_planilha(NOME_PLANILHA_ESCALA)
 
                 elif nome_usuario.lower() in nome.lower() and status == "repasse":
                     if st.button("Cancelar repasse", key=f"cancelar_{idx}"):
                         df.at[idx, "status"] = "fixo"
-                        salvar_planilha(df, _)
-                        st.success("Você reassumiu o plantão. Atualize a página para ver a mudança.")
+                        salvar_planilha(df, ws_escala)
+                        df, ws_escala = carregar_planilha(NOME_PLANILHA_ESCALA)
 else:
     st.info("Faça login na barra lateral para acessar a escala.")
