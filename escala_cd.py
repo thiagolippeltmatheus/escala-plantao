@@ -70,10 +70,23 @@ if not user_row.empty:
     senha_correta = user_row["senha"].values[0]
     nome_usuario = user_row["nome"].values[0]
     if senha_input_str == senha_correta:
+    if senha_input_str == crm_input_str:
+        nova_senha = st.sidebar.text_input("Escolha uma nova senha (apenas números)", type="password")
+        if nova_senha:
+            if nova_senha.isdigit():
+                df_usuarios.loc[df_usuarios["crm"] == crm_input_str, "senha"] = nova_senha
+                salvar_planilha(df_usuarios, ws_usuarios)
+                st.sidebar.success("Senha atualizada com sucesso. Refaça o login.")
+                st.stop()
+            else:
+                st.sidebar.error("A nova senha deve conter apenas números.")
+        else:
+            st.sidebar.warning("Por favor, escolha uma nova senha para continuar.")
+    else:
         st.sidebar.success(f"Bem-vindo, {nome_usuario}!")
         autenticado = True
-    else:
-        st.sidebar.error("Senha incorreta.")
+else:
+    st.sidebar.error("Senha incorreta.")
 else:
     st.sidebar.error("Contate o chefe da escala para realizar o cadastro.")
 
@@ -122,25 +135,29 @@ if autenticado:
                         df.at[idx, "nome"] = nome_usuario
                         df.at[idx, "status"] = "extra"
                         salvar_planilha(df, ws_escala)
-                        st.success("Você pegou a vaga com sucesso! Atualize a página para ver a mudança.")
+                        st.success("Você pegou a vaga com sucesso!")
+                        st.rerun()
 
                 elif status == "repasse" and not ja_escalado:
                     if st.button("Assumir", key=f"assumir_{idx}"):
                         df.at[idx, "nome"] = nome_usuario
                         df.at[idx, "status"] = "extra"
                         salvar_planilha(df, ws_escala)
-                        st.success("Você assumiu o plantão com sucesso! Atualize a página para ver a mudança.")
+                        st.success("Você assumiu o plantão com sucesso!")
+                        st.rerun()
 
                 elif nome_usuario.strip().lower() in nome.strip().lower() and status != "repasse":
                     if st.button("Repassar", key=f"repassar_{idx}"):
                         df.at[idx, "status"] = "repasse"
                         salvar_planilha(df, ws_escala)
-                        st.warning("Você colocou seu plantão para repasse. Atualize a página para ver a mudança.")
+                        st.warning("Você colocou seu plantão para repasse.")
+                        st.rerun()
 
                 elif nome_usuario.strip().lower() in nome.strip().lower() and status == "repasse":
                     if st.button("Cancelar repasse", key=f"cancelar_{idx}"):
                         df.at[idx, "status"] = "fixo"
                         salvar_planilha(df, ws_escala)
-                        st.success("Você reassumiu o plantão. Atualize a página para ver a mudança.")
+                        st.success("Você reassumiu o plantão.")
+                        st.rerun()
 else:
     st.info("Faça login na barra lateral para acessar a escala de plantão.")
