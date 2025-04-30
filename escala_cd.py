@@ -17,6 +17,25 @@ def conectar_gspread():
     return gspread.service_account(filename=temp_file.name)
 
 # Gera a escala de plantão atualizada para os próximos 30 dias
+import streamlit as st
+import pandas as pd
+import gspread
+import json
+import tempfile
+from gspread_dataframe import get_as_dataframe, set_with_dataframe
+from datetime import datetime, timedelta, date
+
+# Função para conectar ao Google Sheets usando credenciais dos secrets
+def conectar_gspread():
+    credenciais_info = json.loads(st.secrets["CREDENCIAIS_JSON"])
+    credenciais_info["private_key"] = credenciais_info["private_key"].replace("\\n", "\n")
+    temp_file = tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".json")
+    json.dump(credenciais_info, temp_file)
+    temp_file.flush()
+    temp_file.close()
+    return gspread.service_account(filename=temp_file.name)
+
+# Gera a escala de plantão atualizada para os próximos 30 dias
 def atualizar_escala_proximos_30_dias():
     try:
         df_escala, ws_escala = carregar_planilha(NOME_PLANILHA_ESCALA)
@@ -33,7 +52,7 @@ def atualizar_escala_proximos_30_dias():
     qtd_plantonistas = {
         "manhã":   {"SEGUNDA": 9, "TERÇA": 9, "QUARTA": 9, "QUINTA": 9, "SEXTA": 9, "SÁBADO": 8, "DOMINGO": 8},
         "tarde":   {"SEGUNDA": 9, "TERÇA": 9, "QUARTA": 9, "QUINTA": 9, "SEXTA": 9, "SÁBADO": 8, "DOMINGO": 8},
-        "noite":   {"SEGUNDA": 8, "TERÇA": 8, "QUARTA": 8, "QUINTA": 8, "SEXTA": 8, "SÁBADO": 8, "DOMINGO": 8},
+        "noite":   {"SEGUNDA": 8, "TERÇA": 7, "QUARTA": 7, "QUINTA": 7, "SEXTA": 7, "SÁBADO": 7, "DOMINGO": 8},
     }
 
     for i in range(1, 31):
@@ -51,25 +70,13 @@ def atualizar_escala_proximos_30_dias():
             crms = list(fixos_sel["CRM"])
 
             total = qtd_plantonistas[turno][dia_nome.upper()]
-            add_cinderela = False
-            if turno == "noite":
-                if dia_nome.upper() in ["TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"]:
-                    add_cinderela = True
-                    total = 7
-                elif dia_nome.upper() == "DOMINGO":
-                    add_cinderela = False
-                    total = 8
 
             while len(nomes) < total:
                 nomes.append("VAGA")
                 crms.append("")
 
-            if add_cinderela:
-                nomes.append("CINDERELA")
-                crms.append("")
-
             for nome, crm in zip(nomes, crms):
-                status = "fixo" if nome not in ["VAGA", "CINDERELA"] else "livre"
+                status = "fixo" if nome not in ["VAGA"] else "livre"
                 dias_novos.append({
                     "data": data_str,
                     "dia da semana": dia_nome.lower(),
@@ -79,11 +86,24 @@ def atualizar_escala_proximos_30_dias():
                     "status": status
                 })
 
+        # Adicionar CINDERELA como turno separado
+        if dia_nome.upper() in ["TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"]:
+            dias_novos.append({
+                "data": data_str,
+                "dia da semana": dia_nome.lower(),
+                "turno": "cinderela",
+                "nome": "CINDERELA",
+                "crm": "",
+                "status": "livre"
+            })
+
     if dias_novos:
         df_novos = pd.DataFrame(dias_novos)
         df_escala = pd.concat([df_escala, df_novos], ignore_index=True)
         df_escala = df_escala.drop_duplicates(subset=["data", "turno", "nome", "crm"], keep="first")
         salvar_planilha(df_escala, ws_escala)
+
+
 
 # Nome das planilhas
 NOME_PLANILHA_ESCALA = 'Escala_Maio_2025'
