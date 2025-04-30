@@ -131,13 +131,19 @@ if autenticado:
             with col2:
                 ja_escalado = not df_usuario_turno.empty
 
+                
                 if (status == "livre" or nome.strip().lower() == "vaga livre") and not ja_escalado:
-                    if st.button("Pegar vaga", key=f"pegar_{idx}"):
-                        df.at[idx, "nome"] = nome_usuario
-                        df.at[idx, "status"] = "extra"
-                        salvar_planilha(df, ws_escala)
-                        st.success("Você pegou a vaga com sucesso!")
-                        st.rerun()
+                    ja_escalado_mesmo_turno = not df[(df["data"] == data_plantoa) & (df["turno"] == turno) & (df["nome"].str.lower().str.strip() == nome_usuario.lower().strip())].empty
+                    if not ja_escalado_mesmo_turno:
+                        if st.button("Pegar vaga", key=f"pegar_{idx}"):
+                            df.at[idx, "nome"] = nome_usuario
+                            df.at[idx, "status"] = "extra"
+                            salvar_planilha(df, ws_escala)
+                            st.success("Você pegou a vaga com sucesso!")
+                            st.rerun()
+                    else:
+                        st.info("Você já está escalado neste turno.")
+    
 
                 elif status == "repasse" and not ja_escalado:
                     if st.button("Assumir", key=f"assumir_{idx}"):
