@@ -86,9 +86,10 @@ def atualizar_escala_proximos_30_dias():
                 if dia_nome.upper() in ["TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"]:
                     add_cinderela = True
 
-            while len(nomes) < total:
-                nomes.append("VAGA")
-                crms.append("")
+            faltam = total - len(nomes)
+            if faltam > 0:
+                nomes.extend(["VAGA"] * faltam)
+                crms.extend([""] * faltam)
 
             if add_cinderela:
                 nomes.append("CINDERELA")
