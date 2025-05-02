@@ -107,7 +107,20 @@ if autenticado:
     data_plantoa = st.date_input("Selecione a data do plantão")
     turno = st.selectbox("Selecione o turno", ["manhã", "tarde", "noite", "cinderela"])
 
-    st.markdown(f"**Data selecionada:** {data_plantoa.strftime('%d/%m/%Y')} - **Turno:** {turno.capitalize()}")
+    
+    dia_semana = data_plantoa.strftime("%A")
+    dias_em_portugues = {
+        "Monday": "segunda-feira",
+        "Tuesday": "terça-feira",
+        "Wednesday": "quarta-feira",
+        "Thursday": "quinta-feira",
+        "Friday": "sexta-feira",
+        "Saturday": "sábado",
+        "Sunday": "domingo"
+    }
+    dia_semana_pt = dias_em_portugues.get(dia_semana, dia_semana)
+    st.markdown(f"**Data selecionada:** {data_plantoa.strftime('%d/%m/%Y')} ({dia_semana_pt}) - **Turno:** {turno.capitalize()}")
+
 
     df_turno = df[(df["data"] == data_plantoa) & (df["turno"] == turno)]
     df_usuario_turno = df_turno[df_turno["nome"].fillna("").astype(str).str.lower().str.strip() == nome_usuario.lower().strip()]
