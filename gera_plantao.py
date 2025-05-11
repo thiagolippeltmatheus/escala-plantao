@@ -2,26 +2,30 @@ import pandas as pd
 import gspread
 import json
 import tempfile
-import streamlit as st
 from gspread_dataframe import get_as_dataframe, set_with_dataframe
 from datetime import datetime, timedelta
 
 # Função para conectar ao Google Sheets usando credenciais dos secrets
+import gspread
+
+# Função para conectar ao Google Sheets usando credenciais locais
+import gspread
+import json
+import tempfile
+import streamlit as st
+
 def conectar_gspread():
     credenciais_info = json.loads(st.secrets["CREDENCIAIS_JSON"])
-
-    # Corrigir a chave privada para ter quebras de linha reais
     credenciais_info["private_key"] = credenciais_info["private_key"].replace("\\n", "\n")
-
-    # Criar arquivo temporário
+    
     temp_file = tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".json")
     json.dump(credenciais_info, temp_file)
     temp_file.flush()
     temp_file.close()
-
-    # Agora conecta ao gspread
+    
     gc = gspread.service_account(filename=temp_file.name)
     return gc
+
 
 # Nome das planilhas
 NOME_PLANILHA_ESCALA = 'Escala_Maio_2025'
@@ -34,7 +38,17 @@ gc = conectar_gspread()
 def carregar_planilha(nome_planilha):
     sh = gc.open(nome_planilha)
     worksheet = sh.sheet1
-    df = get_as_dataframe(worksheet).dropna(how="all")
+    df = get_as_dataframe(worksheet, evaluate_formulas=True).dropna(how="all")
+
+    # Define colunas padrão dependendo da planilha
+    if nome_planilha == NOME_PLANILHA_ESCALA:
+        colunas_esperadas = ["data", "dia da semana", "turno", "nome", "crm", "status"]
+    else:  # Plantonistas_Fixos_Completo_real
+        colunas_esperadas = ["Dia da Semana", "Turno", "Nome", "CRM"]
+
+    if df.empty or not all(col in df.columns for col in colunas_esperadas):
+        df = pd.DataFrame(columns=colunas_esperadas)
+
     return df, worksheet
 
 def salvar_planilha(df, worksheet):
@@ -54,7 +68,7 @@ def atualizar_escala_proximos_30_dias():
     dias_novos = []
 
     dias_semana = ["segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo"]
-    turnos = ["manhã", "tarde", "noite"]
+    turnos = ["manhã", "tarde", "noite", "cinderela"]
     qtd_plantonistas = {
         "manhã":   {"SEGUNDA": 9, "TERÇA": 9, "QUARTA": 9, "QUINTA": 9, "SEXTA": 9, "SÁBADO": 8, "DOMINGO": 8},
         "tarde":   {"SEGUNDA": 9, "TERÇA": 9, "QUARTA": 9, "QUINTA": 9, "SEXTA": 9, "SÁBADO": 8, "DOMINGO": 8},
@@ -77,23 +91,20 @@ def atualizar_escala_proximos_30_dias():
                 (df_fixos["Dia da Semana"].str.upper() == dia_nome.upper())
                 & (df_fixos["Turno"].str.lower() == turno)
             ]
-            nomes = list(fixos_sel["Nome"])
-            crms = list(fixos_sel["CRM"])
-
-            total = qtd_plantonistas[turno][dia_nome.upper()]
-            add_cinderela = False
-            if turno == "noite":
-                if dia_nome.upper() in ["TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"]:
-                    add_cinderela = True
-
-            faltam = total - len(nomes)
-            if faltam > 0:
-                nomes.extend(["VAGA"] * faltam)
-                crms.extend([""] * faltam)
-
-            if add_cinderela:
-                nomes.append("CINDERELA")
-                crms.append("")
+            semana_num = data.isocalendar()[1]
+            nomes = []
+            crms = []
+            for _, row in fixos_sel.iterrows():
+                nome_base = row["Nome"]
+                crm_base = row["CRM"]
+                nome_q = row.get("Nome_quinzenal")
+                crm_q = row.get("CRM_quinzenalCRM")
+                if pd.notna(nome_q) and semana_num % 2 == 0:
+                    nomes.append(nome_q)
+                    crms.append(crm_q)
+                else:
+                    nomes.append(nome_base)
+                    crms.append(crm_base)
 
             for nome, crm in zip(nomes, crms):
                 status = "fixo" if nome not in ["VAGA", "CINDERELA"] else "livre"
@@ -109,7 +120,8 @@ def atualizar_escala_proximos_30_dias():
     if dias_novos:
         df_novos = pd.DataFrame(dias_novos)
         df_escala = pd.concat([df_escala, df_novos], ignore_index=True)
-        df_escala = df_escala.drop_duplicates(subset=["data", "turno", "nome", "crm"], keep="first")
+        turnos_novos = set(df_novos[["data", "turno"]].apply(tuple, axis=1))
+        df_escala = df_escala[~df_escala[["data", "turno"]].apply(tuple, axis=1).isin(turnos_novos)]
         salvar_planilha(df_escala, ws_escala)
         print(f"Escala atualizada até {data_str}.")
     else:
