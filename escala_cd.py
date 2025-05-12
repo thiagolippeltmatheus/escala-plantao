@@ -96,76 +96,71 @@ st.title("Escala de Plantão")
 
 if autenticado:
 
-    st.subheader("🔍 Mural de Vagas e Repasses")
 
-    with st.expander("Filtrar vagas e repasses"):
-        col1, col2 = st.columns(2)
-        with col1:
-            data_inicio = st.date_input("De", value=date.today())
-        with col2:
-            data_fim = st.date_input("Até", value=date.today())
+# --- INÍCIO DO BLOCO DO MURAL ---
+st.subheader("🔍 Mural de Vagas e Repasses")
+with st.expander("Filtrar vagas e repasses"):
+col1, col2 = st.columns(2)
+with col1:
+data_inicio = st.date_input("De", value=date.today())
+with col2:
+data_fim = st.date_input("Até", value=date.today())
+turno_filtro = st.selectbox("Turno", ["todos", "manhã", "tarde", "noite", "cinderela"])
+dias_semana_filtro = st.multiselect(
+"Dia da semana",
+options=["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado", "domingo"],
+default=[]
+)
+df_mural = df.copy()
+df_mural["dia_semana"] = pd.to_datetime(df_mural["data"]).dt.strftime('%A').map({
+"Monday": "segunda-feira",
+"Tuesday": "terça-feira",
+"Wednesday": "quarta-feira",
+"Thursday": "quinta-feira",
+"Friday": "sexta-feira",
+"Saturday": "sábado",
+"Sunday": "domingo"
+})
+df_mural = df_mural[(df_mural["data"] >= data_inicio) & (df_mural["data"] <= data_fim)]
+if turno_filtro != "todos":
+df_mural = df_mural[df_mural["turno"] == turno_filtro.lower()]
+if dias_semana_filtro:
+df_mural = df_mural[df_mural["dia_semana"].isin(dias_semana_filtro)]
+df_vagas_repasses = df_mural[
+((df_mural["nome"].fillna("").str.strip().str.lower() == "vaga livre") | 
+(df_mural["status"].fillna("").str.lower() == "livre") |
+(df_mural["status"].fillna("").str.lower() == "repasse"))
+]
+if df_vagas_repasses.empty:
+st.info("Nenhum plantão disponível ou em repasse com os filtros selecionados.")
+else:
+for idx, row in df_vagas_repasses.iterrows():
+nome = row["nome"] if pd.notna(row["nome"]) and row["nome"] != "" else "Vaga livre"
+status = row["status"].strip().lower() if pd.notna(row["status"]) else "livre"
+data_str = row["data"].strftime("%d/%m/%Y")
+turno_str = row["turno"].capitalize()
+col1, col2 = st.columns([4, 1])
+with col1:
+if status == "repasse":
+st.warning(f"📆 {data_str} | {turno_str} — **{nome} está repassando o plantão.**")
+elif status == "livre" or nome.lower().strip() == "vaga livre":
+st.error(f"📆 {data_str} | {turno_str} — **Vaga disponível**")
+with col2:
+ja_escalado = not df[
+(df["data"] == row["data"]) &
+(df["turno"] == row["turno"]) &
+(df["nome"].str.lower().str.strip() == nome_usuario.lower().strip())
+].empty
+if status in ["livre"] or nome.strip().lower() == "vaga livre":
+if not ja_escalado:
+if st.button("Pegar", key=f"pegar_mural_{idx}"):
+df.at[idx, "nome"] = nome_usuario
+df.at[idx, "status"] = "extra"
+salvar_planilha(df, ws_escala)
+st.success(f"Você pegou a vaga de {data_str} ({turno_str}) com sucesso!")
+st.rerun()
+# --- FIM DO BLOCO DO MURAL ---
 
-        turno_filtro = st.selectbox("Turno", ["todos", "manhã", "tarde", "noite", "cinderela"])
-        dias_semana_filtro = st.multiselect(
-            "Dia da semana",
-            options=["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado", "domingo"],
-            default=[]
-        )
-
-    df_mural = df.copy()
-    df_mural["dia_semana"] = pd.to_datetime(df_mural["data"]).dt.strftime('%A').map({
-        "Monday": "segunda-feira",
-        "Tuesday": "terça-feira",
-        "Wednesday": "quarta-feira",
-        "Thursday": "quinta-feira",
-        "Friday": "sexta-feira",
-        "Saturday": "sábado",
-        "Sunday": "domingo"
-    })
-
-    df_mural = df_mural[(df_mural["data"] >= data_inicio) & (df_mural["data"] <= data_fim)]
-    if turno_filtro != "todos":
-        df_mural = df_mural[df_mural["turno"] == turno_filtro.lower()]
-    if dias_semana_filtro:
-        df_mural = df_mural[df_mural["dia_semana"].isin(dias_semana_filtro)]
-
-    df_vagas_repasses = df_mural[
-        ((df_mural["nome"].fillna("").str.strip().str.lower() == "vaga livre") | 
-         (df_mural["status"].fillna("").str.lower() == "livre") |
-         (df_mural["status"].fillna("").str.lower() == "repasse"))
-    ]
-
-    if df_vagas_repasses.empty:
-        st.info("Nenhum plantão disponível ou em repasse com os filtros selecionados.")
-    else:
-        for idx, row in df_vagas_repasses.iterrows():
-            nome = row["nome"] if pd.notna(row["nome"]) and row["nome"] != "" else "Vaga livre"
-            status = row["status"].strip().lower() if pd.notna(row["status"]) else "livre"
-            data_str = row["data"].strftime("%d/%m/%Y")
-            turno_str = row["turno"].capitalize()
-
-            col1, col2 = st.columns([4, 1])
-            with col1:
-                if status == "repasse":
-                    st.warning(f"📆 {data_str} | {turno_str} — **{nome} está repassando o plantão.**")
-                elif status == "livre" or nome.lower().strip() == "vaga livre":
-                    st.error(f"📆 {data_str} | {turno_str} — **Vaga disponível**")
-
-            with col2:
-                ja_escalado = not df[
-                    (df["data"] == row["data"]) &
-                    (df["turno"] == row["turno"]) &
-                    (df["nome"].str.lower().str.strip() == nome_usuario.lower().strip())
-                ].empty
-
-                if status in ["livre"] or nome.strip().lower() == "vaga livre":
-                    if not ja_escalado:
-                        if st.button("Pegar", key=f"pegar_mural_{idx}"):
-                            df.at[idx, "nome"] = nome_usuario
-                            df.at[idx, "status"] = "extra"
-                            salvar_planilha(df, ws_escala)
-                            st.success(f"Você pegou a vaga de {data_str} ({turno_str}) com sucesso!")
-                            st.rerun()
                     else:
                         st.info("Você já está escalado nesse turno.")
                 elif status == "repasse":
@@ -180,76 +175,71 @@ if autenticado:
     try:
         df, ws_escala = carregar_planilha(NOME_PLANILHA_ESCALA)
 
-    st.subheader("🔍 Mural de Vagas e Repasses")
 
-    with st.expander("Filtrar vagas e repasses"):
-        col1, col2 = st.columns(2)
-        with col1:
-            data_inicio = st.date_input("De", value=date.today())
-        with col2:
-            data_fim = st.date_input("Até", value=date.today())
+# --- INÍCIO DO BLOCO DO MURAL ---
+st.subheader("🔍 Mural de Vagas e Repasses")
+with st.expander("Filtrar vagas e repasses"):
+col1, col2 = st.columns(2)
+with col1:
+data_inicio = st.date_input("De", value=date.today())
+with col2:
+data_fim = st.date_input("Até", value=date.today())
+turno_filtro = st.selectbox("Turno", ["todos", "manhã", "tarde", "noite", "cinderela"])
+dias_semana_filtro = st.multiselect(
+"Dia da semana",
+options=["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado", "domingo"],
+default=[]
+)
+df_mural = df.copy()
+df_mural["dia_semana"] = pd.to_datetime(df_mural["data"]).dt.strftime('%A').map({
+"Monday": "segunda-feira",
+"Tuesday": "terça-feira",
+"Wednesday": "quarta-feira",
+"Thursday": "quinta-feira",
+"Friday": "sexta-feira",
+"Saturday": "sábado",
+"Sunday": "domingo"
+})
+df_mural = df_mural[(df_mural["data"] >= data_inicio) & (df_mural["data"] <= data_fim)]
+if turno_filtro != "todos":
+df_mural = df_mural[df_mural["turno"] == turno_filtro.lower()]
+if dias_semana_filtro:
+df_mural = df_mural[df_mural["dia_semana"].isin(dias_semana_filtro)]
+df_vagas_repasses = df_mural[
+((df_mural["nome"].fillna("").str.strip().str.lower() == "vaga livre") | 
+(df_mural["status"].fillna("").str.lower() == "livre") |
+(df_mural["status"].fillna("").str.lower() == "repasse"))
+]
+if df_vagas_repasses.empty:
+st.info("Nenhum plantão disponível ou em repasse com os filtros selecionados.")
+else:
+for idx, row in df_vagas_repasses.iterrows():
+nome = row["nome"] if pd.notna(row["nome"]) and row["nome"] != "" else "Vaga livre"
+status = row["status"].strip().lower() if pd.notna(row["status"]) else "livre"
+data_str = row["data"].strftime("%d/%m/%Y")
+turno_str = row["turno"].capitalize()
+col1, col2 = st.columns([4, 1])
+with col1:
+if status == "repasse":
+st.warning(f"📆 {data_str} | {turno_str} — **{nome} está repassando o plantão.**")
+elif status == "livre" or nome.lower().strip() == "vaga livre":
+st.error(f"📆 {data_str} | {turno_str} — **Vaga disponível**")
+with col2:
+ja_escalado = not df[
+(df["data"] == row["data"]) &
+(df["turno"] == row["turno"]) &
+(df["nome"].str.lower().str.strip() == nome_usuario.lower().strip())
+].empty
+if status in ["livre"] or nome.strip().lower() == "vaga livre":
+if not ja_escalado:
+if st.button("Pegar", key=f"pegar_mural_{idx}"):
+df.at[idx, "nome"] = nome_usuario
+df.at[idx, "status"] = "extra"
+salvar_planilha(df, ws_escala)
+st.success(f"Você pegou a vaga de {data_str} ({turno_str}) com sucesso!")
+st.rerun()
+# --- FIM DO BLOCO DO MURAL ---
 
-        turno_filtro = st.selectbox("Turno", ["todos", "manhã", "tarde", "noite", "cinderela"])
-        dias_semana_filtro = st.multiselect(
-            "Dia da semana",
-            options=["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado", "domingo"],
-            default=[]
-        )
-
-    df_mural = df.copy()
-    df_mural["dia_semana"] = pd.to_datetime(df_mural["data"]).dt.strftime('%A').map({
-        "Monday": "segunda-feira",
-        "Tuesday": "terça-feira",
-        "Wednesday": "quarta-feira",
-        "Thursday": "quinta-feira",
-        "Friday": "sexta-feira",
-        "Saturday": "sábado",
-        "Sunday": "domingo"
-    })
-
-    df_mural = df_mural[(df_mural["data"] >= data_inicio) & (df_mural["data"] <= data_fim)]
-    if turno_filtro != "todos":
-        df_mural = df_mural[df_mural["turno"] == turno_filtro.lower()]
-    if dias_semana_filtro:
-        df_mural = df_mural[df_mural["dia_semana"].isin(dias_semana_filtro)]
-
-    df_vagas_repasses = df_mural[
-        ((df_mural["nome"].fillna("").str.strip().str.lower() == "vaga livre") | 
-         (df_mural["status"].fillna("").str.lower() == "livre") |
-         (df_mural["status"].fillna("").str.lower() == "repasse"))
-    ]
-
-    if df_vagas_repasses.empty:
-        st.info("Nenhum plantão disponível ou em repasse com os filtros selecionados.")
-    else:
-        for idx, row in df_vagas_repasses.iterrows():
-            nome = row["nome"] if pd.notna(row["nome"]) and row["nome"] != "" else "Vaga livre"
-            status = row["status"].strip().lower() if pd.notna(row["status"]) else "livre"
-            data_str = row["data"].strftime("%d/%m/%Y")
-            turno_str = row["turno"].capitalize()
-
-            col1, col2 = st.columns([4, 1])
-            with col1:
-                if status == "repasse":
-                    st.warning(f"📆 {data_str} | {turno_str} — **{nome} está repassando o plantão.**")
-                elif status == "livre" or nome.lower().strip() == "vaga livre":
-                    st.error(f"📆 {data_str} | {turno_str} — **Vaga disponível**")
-
-            with col2:
-                ja_escalado = not df[
-                    (df["data"] == row["data"]) &
-                    (df["turno"] == row["turno"]) &
-                    (df["nome"].str.lower().str.strip() == nome_usuario.lower().strip())
-                ].empty
-
-                if status in ["livre"] or nome.strip().lower() == "vaga livre":
-                    if not ja_escalado:
-                        if st.button("Pegar", key=f"pegar_mural_{idx}"):
-                            df.at[idx, "nome"] = nome_usuario
-                            df.at[idx, "status"] = "extra"
-                            salvar_planilha(df, ws_escala)
-                            st.success(f"Você pegou a vaga de {data_str} ({turno_str}) com sucesso!")
-                            st.rerun()
                     else:
                         st.info("Você já está escalado nesse turno.")
                 elif status == "repasse":
