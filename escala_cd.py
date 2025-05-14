@@ -97,7 +97,7 @@ if autenticado:
 
     with aba_calendario:
         data_plantoa = st.date_input("Selecione a data do plantão")
-        turno = st.selectbox("Selecione o turno", ["manhã", "tarde", "noite", "cinderela"])
+        turno = st.selectbox("Selecione o turno", ["manhã", "tarde", "tardista", "noite", "cinderela"])
 
         dia_semana = data_plantoa.strftime("%A")
         dias_em_portugues = {
@@ -172,7 +172,7 @@ if autenticado:
         with col2:
             data_fim = st.date_input("Até", value=date.today(), format="DD/MM/YYYY")
 
-        turno_filtro = st.selectbox("Turno", ["todos", "manhã", "tarde", "noite", "cinderela"])
+        turno_filtro = st.selectbox("Turno", ["todos", "manhã", "tarde", "tardista", "noite", "cinderela"])
         dias_semana_filtro = st.multiselect(
             "Dia da semana",
             options=["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado", "domingo"],
