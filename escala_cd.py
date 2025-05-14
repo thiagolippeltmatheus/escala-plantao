@@ -98,7 +98,7 @@ if autenticado:
     aba_calendario, aba_mural = st.tabs(["📅 Calendário", "📌 Mural de Vagas"])
 
     with aba_calendario:
-        data_plantoa = st.date_input("Selecione a data do plantão")
+        data_plantoa = st.date_input("Selecione a data do plantão", format="DD/MM/YYYY")
         turno = st.selectbox("Selecione o turno", turnos_disponiveis)
 
         dia_semana = data_plantoa.strftime("%A")
