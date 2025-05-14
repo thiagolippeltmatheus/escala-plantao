@@ -168,9 +168,9 @@ if autenticado:
         st.subheader("🔍 Mural de Vagas e Repasses")
         col1, col2 = st.columns(2)
         with col1:
-            data_inicio = st.date_input("De", value=date.today())
+            data_inicio = st.date_input("De", value=date.today(), format="DD/MM/YYYY")
         with col2:
-            data_fim = st.date_input("Até", value=date.today())
+            data_fim = st.date_input("Até", value=date.today(), format="DD/MM/YYYY")
 
         turno_filtro = st.selectbox("Turno", ["todos", "manhã", "tarde", "noite", "cinderela"])
         dias_semana_filtro = st.multiselect(
