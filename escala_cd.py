@@ -97,8 +97,7 @@ if autenticado:
 
     with aba_calendario:
         data_plantoa = st.date_input("Selecione a data do plantão")
-        turno = st.selectbox("Selecione o turno", ["manhã", "tarde", "noite", "cinderela", "tardista"])
-
+        turno = st.selectbox("Selecione o turno", ["manhã", "tarde", "noite", "cinderela"])
 
         dia_semana = data_plantoa.strftime("%A")
         dias_em_portugues = {
@@ -173,8 +172,7 @@ if autenticado:
         with col2:
             data_fim = st.date_input("Até", value=date.today())
 
-        turno_filtro = st.selectbox("Turno", ["todos", "manhã", "tarde", "noite", "cinderela", "tardista"])
-
+        turno_filtro = st.selectbox("Turno", ["todos", "manhã", "tarde", "noite", "cinderela"])
         dias_semana_filtro = st.multiselect(
             "Dia da semana",
             options=["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado", "domingo"],
@@ -210,15 +208,26 @@ if autenticado:
             for idx, row in df_vagas_repasses.iterrows():
                 data_str = row["data"].strftime("%d/%m/%Y")
                 turno_str = row["turno"].capitalize()
+                dia_semana_str = row["data"].strftime("%A")
+                dias_em_portugues = {
+                    "Monday": "segunda-feira",
+                    "Tuesday": "terça-feira",
+                    "Wednesday": "quarta-feira",
+                    "Thursday": "quinta-feira",
+                    "Friday": "sexta-feira",
+                    "Saturday": "sábado",
+                    "Sunday": "domingo"
+                }
+                dia_semana_pt = dias_em_portugues.get(dia_semana_str, dia_semana_str)
                 nome = row["nome"] if pd.notna(row["nome"]) else "Vaga livre"
                 status = row["status"].strip().lower() if pd.notna(row["status"]) else "livre"
 
                 col1, col2 = st.columns([4, 1])
                 with col1:
                     if status == "repasse":
-                        st.warning(f"📆 {data_str} | {turno_str} — **{nome} está repassando o plantão.**")
+                        st.warning(f"📆 {data_str} ({dia_semana_pt}) | {turno_str} — **{nome} está repassando o plantão.**")
                     elif status == "livre" or nome.lower().strip() == "vaga livre":
-                        st.error(f"📆 {data_str} | {turno_str} — **Vaga disponível**")
+                        st.error(f"📆 {data_str} ({dia_semana_pt}) | {turno_str} — **Vaga disponível**")
                 with col2:
                     ja_escalado = not df[
                         (df["data"] == row["data"]) &
