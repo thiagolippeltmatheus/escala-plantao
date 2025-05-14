@@ -7,6 +7,8 @@ import tempfile
 from gspread_dataframe import get_as_dataframe, set_with_dataframe
 from datetime import date
 
+turnos_disponiveis = ["manhã", "tarde", "tardista", "noite", "cinderela"]
+
 def conectar_gspread():
     credenciais_info = json.loads(st.secrets["CREDENCIAIS_JSON"])
     credenciais_info["private_key"] = credenciais_info["private_key"].replace("\n", "\n".replace("\\n", "\n"))
@@ -97,7 +99,7 @@ if autenticado:
 
     with aba_calendario:
         data_plantoa = st.date_input("Selecione a data do plantão")
-        turno = st.selectbox("Selecione o turno", ["manhã", "tarde", "tardista", "noite", "cinderela"])
+        turno = st.selectbox("Selecione o turno", turnos_disponiveis)
 
         dia_semana = data_plantoa.strftime("%A")
         dias_em_portugues = {
@@ -172,7 +174,7 @@ if autenticado:
         with col2:
             data_fim = st.date_input("Até", value=date.today(), format="DD/MM/YYYY")
 
-        turno_filtro = st.selectbox("Turno", ["todos", "manhã", "tarde", "tardista", "noite", "cinderela"])
+        turno_filtro = st.selectbox("Turno", ["todos"] + turnos_disponiveis)
         dias_semana_filtro = st.multiselect(
             "Dia da semana",
             options=["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado", "domingo"],
