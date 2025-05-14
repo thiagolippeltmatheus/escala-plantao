@@ -44,8 +44,14 @@ except Exception as e:
     st.error(f"Erro ao carregar usuários: {e}")
     st.stop()
 
-df_usuarios["crm"] = df_usuarios["crm"].apply(lambda x: str(int(float(x)))).str.strip()
-df_usuarios["senha"] = df_usuarios["senha"].apply(lambda x: str(int(float(x)))).str.strip()
+def tratar_campo(valor):
+    try:
+        return str(int(float(valor))).strip()
+    except:
+        return str(valor).strip()
+
+df_usuarios["crm"] = df_usuarios["crm"].apply(tratar_campo)
+df_usuarios["senha"] = df_usuarios["senha"].apply(tratar_campo)
 crm_input_str = str(crm_input).strip()
 senha_input_str = str(senha_input).strip()
 
