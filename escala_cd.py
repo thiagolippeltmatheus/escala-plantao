@@ -131,7 +131,13 @@ if autenticado:
                     elif status == "livre" or nome.strip().lower() == "vaga livre":
                         st.error("**Vaga disponível**")
                     else:
-                        st.markdown(f"**{nome}** está escalado como `{status}`", unsafe_allow_html=True)
+                        funcao_exibida = str(row["funcao"]).strip() if "funcao" in df.columns and pd.notna(row["funcao"]) else ""
+                        nome_formatado = f"**{nome.strip()}**"
+                        if funcao_exibida:
+                            st.markdown(f"{nome_formatado} <span style='color:red'>({funcao_exibida})</span> está escalado como `{status}`", unsafe_allow_html=True)
+                        else:
+                            st.markdown(f"{nome_formatado} está escalado como `{status}`", unsafe_allow_html=True)
+
 
                 with col2:
                     ja_escalado = not df_usuario_turno.empty
