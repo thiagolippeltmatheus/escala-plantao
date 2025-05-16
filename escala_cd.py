@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import gspread
@@ -83,7 +84,6 @@ else:
     st.sidebar.error("Contate o chefe da escala para realizar o cadastro.")
 
 st.title("Escala de Plantão")
-st.caption("Versão: 2024-05-16 15:51h")
 
 if autenticado:
     try:
@@ -100,6 +100,19 @@ if autenticado:
     with aba_calendario:
         data_plantoa = st.date_input("Selecione a data do plantão", format="DD/MM/YYYY")
         turno = st.selectbox("Selecione o turno", turnos_disponiveis)
+
+        dia_semana = data_plantoa.strftime("%A")
+        dias_em_portugues = {
+            "Monday": "segunda-feira",
+            "Tuesday": "terça-feira",
+            "Wednesday": "quarta-feira",
+            "Thursday": "quinta-feira",
+            "Friday": "sexta-feira",
+            "Saturday": "sábado",
+            "Sunday": "domingo"
+        }
+        dia_semana_pt = dias_em_portugues.get(dia_semana, dia_semana)
+        st.markdown(f"**Data selecionada:** {data_plantoa.strftime('%d/%m/%Y')} ({dia_semana_pt}) - **Turno:** {turno.capitalize()}")
 
         df_turno = df[(df["data"] == data_plantoa) & (df["turno"] == turno)]
         df_usuario_turno = df_turno[df_turno["nome"].fillna("").astype(str).str.lower().str.strip() == nome_usuario.lower().strip()]
@@ -118,14 +131,7 @@ if autenticado:
                     elif status == "livre" or nome.strip().lower() == "vaga livre":
                         st.error("**Vaga disponível**")
                     else:
-                        funcao_exibida = ""
-                        if "funcao" in df.columns and pd.notna(row.get("funcao")):
-                            funcao_exibida = str(row["funcao"]).strip()
-                        nome_formatado = f"**{nome.strip()}**"
-                        if funcao_exibida:
-                            st.markdown(f"{nome_formatado} <span style='color:red'>({funcao_exibida})</span> está escalado como `{status}`", unsafe_allow_html=True)
-                        else:
-                            st.markdown(f"{nome_formatado} está escalado como `{status}`", unsafe_allow_html=True)
+                        st.markdown(f"**{nome}** está escalado como `{status}`", unsafe_allow_html=True)
 
                 with col2:
                     ja_escalado = not df_usuario_turno.empty
@@ -159,5 +165,92 @@ if autenticado:
                             salvar_planilha(df, ws_escala)
                             st.success("Você reassumiu o plantão.")
                             st.rerun()
+
+    with aba_mural:
+        st.subheader("🔍 Mural de Vagas e Repasses")
+        col1, col2 = st.columns(2)
+        with col1:
+            data_inicio = st.date_input("De", value=date.today(), format="DD/MM/YYYY")
+        with col2:
+            data_fim = st.date_input("Até", value=date.today(), format="DD/MM/YYYY")
+
+        turno_filtro = st.selectbox("Turno", ["todos"] + turnos_disponiveis)
+        dias_semana_filtro = st.multiselect(
+            "Dia da semana",
+            options=["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado", "domingo"],
+            default=[]
+        )
+
+        df_mural = df.copy()
+        df_mural["dia_semana"] = pd.to_datetime(df_mural["data"]).dt.strftime('%A').map({
+            "Monday": "segunda-feira",
+            "Tuesday": "terça-feira",
+            "Wednesday": "quarta-feira",
+            "Thursday": "quinta-feira",
+            "Friday": "sexta-feira",
+            "Saturday": "sábado",
+            "Sunday": "domingo"
+        })
+
+        df_mural = df_mural[(df_mural["data"] >= data_inicio) & (df_mural["data"] <= data_fim)]
+        if turno_filtro != "todos":
+            df_mural = df_mural[df_mural["turno"] == turno_filtro.lower()]
+        if dias_semana_filtro:
+            df_mural = df_mural[df_mural["dia_semana"].isin(dias_semana_filtro)]
+
+        df_vagas_repasses = df_mural[
+            ((df_mural["nome"].fillna('').str.strip().str.lower() == "vaga livre") |
+             (df_mural["status"].fillna('').str.lower() == "livre") |
+             (df_mural["status"].fillna('').str.lower() == "repasse"))
+        ]
+
+        if df_vagas_repasses.empty:
+            st.info("Nenhum plantão disponível ou em repasse com os filtros selecionados.")
+        else:
+            for idx, row in df_vagas_repasses.iterrows():
+                data_str = row["data"].strftime("%d/%m/%Y")
+                turno_str = row["turno"].capitalize()
+                dia_semana_str = row["data"].strftime("%A")
+                dias_em_portugues = {
+                    "Monday": "segunda-feira",
+                    "Tuesday": "terça-feira",
+                    "Wednesday": "quarta-feira",
+                    "Thursday": "quinta-feira",
+                    "Friday": "sexta-feira",
+                    "Saturday": "sábado",
+                    "Sunday": "domingo"
+                }
+                dia_semana_pt = dias_em_portugues.get(dia_semana_str, dia_semana_str)
+                nome = row["nome"] if pd.notna(row["nome"]) else "Vaga livre"
+                status = row["status"].strip().lower() if pd.notna(row["status"]) else "livre"
+
+                col1, col2 = st.columns([4, 1])
+                with col1:
+                    if status == "repasse":
+                        st.warning(f"📆 {data_str} ({dia_semana_pt}) | {turno_str} — **{nome} está repassando o plantão.**")
+                    elif status == "livre" or nome.lower().strip() == "vaga livre":
+                        st.error(f"📆 {data_str} ({dia_semana_pt}) | {turno_str} — **Vaga disponível**")
+                with col2:
+                    ja_escalado = not df[
+                        (df["data"] == row["data"]) &
+                        (df["turno"] == row["turno"]) &
+                        (df["nome"].str.lower().str.strip() == nome_usuario.lower().strip())
+                    ].empty
+                    if status in ["livre"] or nome.strip().lower() == "vaga livre":
+                        if not ja_escalado:
+                            if st.button("Pegar", key=f"pegar_mural_{idx}"):
+                                df.at[idx, "nome"] = nome_usuario
+                                df.at[idx, "status"] = "extra"
+                                salvar_planilha(df, ws_escala)
+                                st.success(f"Você pegou a vaga de {data_str} ({turno_str}) com sucesso!")
+                                st.rerun()
+                    elif status == "repasse":
+                        if not ja_escalado:
+                            if st.button("Assumir", key=f"assumir_mural_{idx}"):
+                                df.at[idx, "nome"] = nome_usuario
+                                df.at[idx, "status"] = "extra"
+                                salvar_planilha(df, ws_escala)
+                                st.success(f"Você assumiu o plantão de {data_str} ({turno_str}) com sucesso!")
+                                st.rerun()
 else:
     st.info("Faça login na barra lateral para acessar a escala de plantão.")
