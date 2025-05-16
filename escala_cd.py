@@ -88,8 +88,6 @@ st.title("Escala de Plantão")
 if autenticado:
     try:
         df, ws_escala = carregar_planilha(NOME_PLANILHA_ESCALA)
-        st.write("📊 Planilha carregada:")
-        st.dataframe(df[df["data"] == date(2025, 5, 23)])
     except Exception as e:
         st.error(f"Erro ao carregar escala: {e}")
         st.stop()
@@ -133,12 +131,7 @@ if autenticado:
                     elif status == "livre" or nome.strip().lower() == "vaga livre":
                         st.error("**Vaga disponível**")
                     else:
-                        funcao_exibida = row.get("funcao", "").strip() if "funcao" in row else ""
-                        nome_formatado = f"**{nome.strip()}**"
-                        if funcao_exibida:
-                            st.markdown(f"{nome_formatado} <span style='color:red'>({funcao_exibida})</span> está escalado como `{status}`", unsafe_allow_html=True)
-                        else:
-                            st.markdown(f"{nome_formatado} está escalado como `{status}`", unsafe_allow_html=True)
+                        st.markdown(f"**{nome}** está escalado como `{status}`", unsafe_allow_html=True)
 
                 with col2:
                     ja_escalado = not df_usuario_turno.empty
