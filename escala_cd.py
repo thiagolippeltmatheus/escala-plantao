@@ -88,6 +88,8 @@ st.title("Escala de Plantão")
 if autenticado:
     try:
         df, ws_escala = carregar_planilha(NOME_PLANILHA_ESCALA)
+        st.write("📊 Planilha carregada:")
+        st.dataframe(df[df["data"] == date(2025, 5, 23)])
     except Exception as e:
         st.error(f"Erro ao carregar escala: {e}")
         st.stop()
