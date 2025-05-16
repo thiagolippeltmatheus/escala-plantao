@@ -83,7 +83,7 @@ else:
     st.sidebar.error("Contate o chefe da escala para realizar o cadastro.")
 
 st.title("Escala de Plantão")
-st.caption("Versão: 2024-05-16 15:51h")
+st.caption("Versão: 2025-05-16 19h")
 
 if autenticado:
     try:
@@ -95,7 +95,7 @@ if autenticado:
     df["data"] = pd.to_datetime(df["data"], dayfirst=True).dt.date
     df["turno"] = df["turno"].str.lower()
 
-    aba_calendario, aba_mural = st.tabs(["📅 Calendário", "📌 Mural de Vagas"])
+    aba_calendario, aba_mural = st.tabs(["🗕️ Calendário", "📌 Mural de Vagas"])
 
     with aba_calendario:
         data_plantoa = st.date_input("Selecione a data do plantão", format="DD/MM/YYYY")
@@ -111,21 +111,23 @@ if autenticado:
                 nome = row["nome"] if pd.notna(row["nome"]) and row["nome"] != "" else "Vaga livre"
                 status = row["status"].strip().lower() if pd.notna(row["status"]) else "livre"
 
+                funcao_exibida = ""
+                if "funcao" in df.columns and pd.notna(row.get("funcao", "")):
+                    funcao_exibida = str(row["funcao"]).strip()
+                nome_formatado = f"**{nome.strip()}**"
+                if funcao_exibida:
+                    texto = f"{nome_formatado} <span style='color:red'>({funcao_exibida})</span> está escalado como `{status}`"
+                else:
+                    texto = f"{nome_formatado} está escalado como `{status}`"
+
                 col1, col2 = st.columns([3, 1])
                 with col1:
                     if status == "repasse":
-                        st.warning(f"**{nome}** está repassando o plantão.")
+                        st.warning(texto, unsafe_allow_html=True)
                     elif status == "livre" or nome.strip().lower() == "vaga livre":
                         st.error("**Vaga disponível**")
                     else:
-                        funcao_exibida = ""
-                        if "funcao" in df.columns and pd.notna(row.get("funcao")):
-                            funcao_exibida = str(row["funcao"]).strip()
-                        nome_formatado = f"**{nome.strip()}**"
-                        if funcao_exibida:
-                            st.markdown(f"{nome_formatado} <span style='color:red'>({funcao_exibida})</span> está escalado como `{status}`", unsafe_allow_html=True)
-                        else:
-                            st.markdown(f"{nome_formatado} está escalado como `{status}`", unsafe_allow_html=True)
+                        st.success(texto, unsafe_allow_html=True)
 
                 with col2:
                     ja_escalado = not df_usuario_turno.empty
