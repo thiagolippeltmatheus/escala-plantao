@@ -121,7 +121,9 @@ if autenticado:
             st.warning("Nenhum plantonista encontrado para essa data e turno.")
         else:
             for idx, row in df_turno.iterrows():
-                nome = row["nome"] if pd.notna(row["nome"]) and row["nome"] != "" else "Vaga livre"
+                nome_base = row["nome"] if pd.notna(row["nome"]) and row["nome"] != "" else "Vaga livre"
+                funcao = row.get("função", "")
+                nome = f"{nome_base} ({funcao})" if pd.notna(funcao) and str(funcao).strip() else nome_base
                 status = row["status"].strip().lower() if pd.notna(row["status"]) else "livre"
 
                 col1, col2 = st.columns([3, 1])
@@ -221,7 +223,9 @@ if autenticado:
                     "Sunday": "domingo"
                 }
                 dia_semana_pt = dias_em_portugues.get(dia_semana_str, dia_semana_str)
-                nome = row["nome"] if pd.notna(row["nome"]) else "Vaga livre"
+                nome_base = row["nome"] if pd.notna(row["nome"]) else "Vaga livre"
+                funcao = row.get("função", "")
+                nome = f"{nome_base} ({funcao})" if pd.notna(funcao) and str(funcao).strip() else nome_base
                 status = row["status"].strip().lower() if pd.notna(row["status"]) else "livre"
 
                 col1, col2 = st.columns([4, 1])
