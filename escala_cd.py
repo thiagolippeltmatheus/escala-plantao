@@ -83,7 +83,7 @@ else:
     st.sidebar.error("Contate o chefe da escala para realizar o cadastro.")
 
 st.title("Escala de Plantão")
-st.caption("Versão: 2024-05-16 15:30h")
+st.caption("Versão: 2024-05-16 15:51h")
 
 if autenticado:
     try:
@@ -119,11 +119,8 @@ if autenticado:
                         st.error("**Vaga disponível**")
                     else:
                         funcao_exibida = ""
-                        try:
-                            if "funcao" in df.columns and pd.notna(row["funcao"]):
-                                funcao_exibida = str(row["funcao"]).strip()
-                        except Exception as e:
-                            st.warning(f"Erro ao acessar função: {e}")
+                        if "funcao" in df.columns and pd.notna(row.get("funcao")):
+                            funcao_exibida = str(row["funcao"]).strip()
                         nome_formatado = f"**{nome.strip()}**"
                         if funcao_exibida:
                             st.markdown(f"{nome_formatado} <span style='color:red'>({funcao_exibida})</span> está escalado como `{status}`", unsafe_allow_html=True)
