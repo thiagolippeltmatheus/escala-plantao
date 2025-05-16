@@ -131,7 +131,7 @@ if autenticado:
                     elif status == "livre" or nome.strip().lower() == "vaga livre":
                         st.error("**Vaga disponível**")
                     else:
-                        st.markdown(f"**{nome}** está escalado como `{status}`", unsafe_allow_html=True)
+                        st.success(f"**{nome}** está escalado como `{status}`")
 
                 with col2:
                     ja_escalado = not df_usuario_turno.empty
@@ -230,6 +230,8 @@ if autenticado:
                         st.warning(f"📆 {data_str} ({dia_semana_pt}) | {turno_str} — **{nome} está repassando o plantão.**")
                     elif status == "livre" or nome.lower().strip() == "vaga livre":
                         st.error(f"📆 {data_str} ({dia_semana_pt}) | {turno_str} — **Vaga disponível**")
+                    else:
+                        st.success(f"📆 {data_str} ({dia_semana_pt}) | {turno_str} — **{nome} está escalado como `{status}`**")
                 with col2:
                     ja_escalado = not df[
                         (df["data"] == row["data"]) &
