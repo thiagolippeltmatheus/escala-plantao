@@ -84,6 +84,8 @@ else:
     st.sidebar.error("Contate o chefe da escala para realizar o cadastro.")
 
 st.title("Escala de Plantão")
+st.caption("Versão: 2024-05-16 16h")
+
 
 if autenticado:
     try:
