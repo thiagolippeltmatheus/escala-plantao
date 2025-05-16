@@ -95,7 +95,7 @@ if autenticado:
     df["data"] = pd.to_datetime(df["data"], dayfirst=True).dt.date
     df["turno"] = df["turno"].str.lower()
 
-    aba_calendario, aba_mural = st.tabs(["🗕️ Calendário", "📌 Mural de Vagas"])
+    aba_calendario, aba_mural = st.tabs(["\ud83d\uddd5\ufe0f Calendário", "\ud83d\udccc Mural de Vagas"])
 
     with aba_calendario:
         data_plantoa = st.date_input("Selecione a data do plantão", format="DD/MM/YYYY")
@@ -125,7 +125,7 @@ if autenticado:
                     if status == "repasse":
                         st.warning(texto, unsafe_allow_html=True)
                     elif status == "livre" or nome.strip().lower() == "vaga livre":
-                        st.error("**Vaga disponível**")
+                        st.error("\ud83d\udea8 Vaga disponível")
                     else:
                         st.success(texto, unsafe_allow_html=True)
 
