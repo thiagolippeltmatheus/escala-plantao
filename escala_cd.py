@@ -97,7 +97,6 @@ if autenticado:
 
     aba_calendario, aba_mural = st.tabs(["Calendário", "Mural de Vagas"])
 
-
     with aba_calendario:
         data_plantoa = st.date_input("Selecione a data do plantão", format="DD/MM/YYYY")
         turno = st.selectbox("Selecione o turno", turnos_disponiveis)
@@ -117,18 +116,18 @@ if autenticado:
                     funcao_exibida = str(row["funcao"]).strip()
                 nome_formatado = f"**{nome.strip()}**"
                 if funcao_exibida:
-                    texto = f"{nome_formatado} <span style='color:red'>({funcao_exibida})</span> está escalado como `{status}`"
+                    texto = f"{nome_formatado} ({funcao_exibida}) está escalado como `{status}`"
                 else:
                     texto = f"{nome_formatado} está escalado como `{status}`"
 
                 col1, col2 = st.columns([3, 1])
                 with col1:
                     if status == "repasse":
-                        st.warning(texto, unsafe_allow_html=True)
+                        st.warning(texto)
                     elif status == "livre" or nome.strip().lower() == "vaga livre":
-                        st.error("\ud83d\udea8 Vaga disponível")
+                        st.error("🚨 Vaga disponível")
                     else:
-                        st.success(texto, unsafe_allow_html=True)
+                        st.success(texto)
 
                 with col2:
                     ja_escalado = not df_usuario_turno.empty
