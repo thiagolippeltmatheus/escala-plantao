@@ -122,7 +122,7 @@ if autenticado:
         else:
             for idx, row in df_turno.iterrows():
                 nome_base = row["nome"] if pd.notna(row["nome"]) and row["nome"] != "" else "Vaga livre"
-                funcao = row.get("função", "")
+                funcao = row.get("funcao", "")
                 nome = f"{nome_base} ({funcao})" if pd.notna(funcao) and str(funcao).strip() else nome_base
                 status = row["status"].strip().lower() if pd.notna(row["status"]) else "livre"
 
@@ -224,7 +224,7 @@ if autenticado:
                 }
                 dia_semana_pt = dias_em_portugues.get(dia_semana_str, dia_semana_str)
                 nome_base = row["nome"] if pd.notna(row["nome"]) else "Vaga livre"
-                funcao = row.get("função", "")
+                funcao = row.get("funcao", "")
                 nome = f"{nome_base} ({funcao})" if pd.notna(funcao) and str(funcao).strip() else nome_base
                 status = row["status"].strip().lower() if pd.notna(row["status"]) else "livre"
 
