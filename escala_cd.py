@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import gspread
@@ -84,8 +83,7 @@ else:
     st.sidebar.error("Contate o chefe da escala para realizar o cadastro.")
 
 st.title("Escala de Plantão")
-st.caption("Versão: 2024-05-16 16h")
-
+st.caption("Versão: 2024-05-16 15:30h")
 
 if autenticado:
     try:
@@ -126,7 +124,6 @@ if autenticado:
                                 funcao_exibida = str(row["funcao"]).strip()
                         except Exception as e:
                             st.warning(f"Erro ao acessar função: {e}")
-                        st.write("DEBUG:", row)
                         nome_formatado = f"**{nome.strip()}**"
                         if funcao_exibida:
                             st.markdown(f"{nome_formatado} <span style='color:red'>({funcao_exibida})</span> está escalado como `{status}`", unsafe_allow_html=True)
@@ -165,6 +162,5 @@ if autenticado:
                             salvar_planilha(df, ws_escala)
                             st.success("Você reassumiu o plantão.")
                             st.rerun()
-
 else:
     st.info("Faça login na barra lateral para acessar a escala de plantão.")
