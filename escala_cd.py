@@ -34,44 +34,32 @@ def salvar_planilha(df, worksheet):
     set_with_dataframe(worksheet, df)
 
 st.sidebar.header("Login")
+
+# Inicializa os estados de sessão
+if "autenticado" not in st.session_state:
+    st.session_state.autenticado = False
+if "nome_usuario" not in st.session_state:
+    st.session_state.nome_usuario = ""
+
+# Campo de entrada
 crm_input = st.sidebar.text_input("CRM")
 senha_input = st.sidebar.text_input("Senha", type="password")
 
-autenticado = False
-nome_usuario = ""
-
-try:
-    df_usuarios, ws_usuarios = carregar_planilha(NOME_PLANILHA_USUARIOS)
-except Exception as e:
-    st.error(f"Erro ao carregar usuários: {e}")
-    st.stop()
-
-def tratar_campo(valor):
-    try:
-        return str(int(float(valor))).strip()
-    except:
-        return str(valor).strip()
-
-df_usuarios["crm"] = df_usuarios["crm"].apply(tratar_campo)
-df_usuarios["senha"] = df_usuarios["senha"].apply(tratar_campo)
-crm_input_str = str(crm_input).strip()
-senha_input_str = str(senha_input).strip()
-
-
+# Botão de login
 if st.sidebar.button("Entrar"):
-    user_row = df_usuarios[df_usuarios["crm"] == crm_input_str]
-
+    user_row = df_usuarios[df_usuarios["crm"] == str(crm_input).strip()]
     if not user_row.empty:
         senha_correta = user_row["senha"].values[0]
         nome_usuario = user_row["nome"].values[0]
-        if senha_input_str == senha_correta:
-            if senha_input_str == crm_input_str:
+        if str(senha_input).strip() == senha_correta:
+            if senha_input.strip() == crm_input.strip():
                 nova_senha = st.sidebar.text_input("Escolha uma nova senha (apenas números)", type="password")
                 if nova_senha:
                     if nova_senha.isdigit():
-                        df_usuarios.loc[df_usuarios["crm"] == crm_input_str, "senha"] = nova_senha
+                        df_usuarios.loc[df_usuarios["crm"] == crm_input.strip(), "senha"] = nova_senha
                         salvar_planilha(df_usuarios, ws_usuarios)
                         st.sidebar.success("Senha atualizada com sucesso. Refaça o login.")
+                        st.session_state.autenticado = False
                         st.stop()
                     else:
                         st.sidebar.error("A nova senha deve conter apenas números.")
@@ -79,12 +67,15 @@ if st.sidebar.button("Entrar"):
                     st.sidebar.warning("Por favor, escolha uma nova senha para continuar.")
             else:
                 st.sidebar.success(f"Bem-vindo, {nome_usuario}!")
-                autenticado = True
+                st.session_state.autenticado = True
+                st.session_state.nome_usuario = nome_usuario
         else:
             st.sidebar.error("Senha incorreta.")
     else:
         st.sidebar.error("Contate o chefe da escala para realizar o cadastro.")
- 
+
+autenticado = st.session_state.autenticado
+nome_usuario = st.session_state.nome_usuario
 
 st.title("Escala de Plantão")
 
