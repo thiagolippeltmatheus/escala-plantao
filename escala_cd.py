@@ -7,7 +7,7 @@ import tempfile
 from gspread_dataframe import get_as_dataframe, set_with_dataframe
 from datetime import date
 
-turnos_disponiveis = ["manhã", "tarde", "tardista", "noite", "cinderela"]
+turnos_disponiveis = ["manhã", "tarde", "noite", "cinderela"]
 
 def conectar_gspread():
     credenciais_info = json.loads(st.secrets["CREDENCIAIS_JSON"])
