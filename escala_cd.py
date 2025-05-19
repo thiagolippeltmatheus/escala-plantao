@@ -40,13 +40,16 @@ if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
 if "nome_usuario" not in st.session_state:
     st.session_state.nome_usuario = ""
+if "tentou_login" not in st.session_state:
+    st.session_state.tentou_login = False
 
-# Campo de entrada
-crm_input = st.sidebar.text_input("CRM")
-senha_input = st.sidebar.text_input("Senha", type="password")
+# Campos de entrada SEMPRE mostrados
+crm_input = st.sidebar.text_input("CRM", key="crm_input")
+senha_input = st.sidebar.text_input("Senha", type="password", key="senha_input")
 
 # Botão de login
 if st.sidebar.button("Entrar"):
+    st.session_state.tentou_login = True
     user_row = df_usuarios[df_usuarios["crm"] == str(crm_input).strip()]
     if not user_row.empty:
         senha_correta = user_row["senha"].values[0]
@@ -74,6 +77,7 @@ if st.sidebar.button("Entrar"):
     else:
         st.sidebar.error("Contate o chefe da escala para realizar o cadastro.")
 
+# Recuperar estados salvos
 autenticado = st.session_state.autenticado
 nome_usuario = st.session_state.nome_usuario
 
