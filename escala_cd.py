@@ -281,4 +281,4 @@ if autenticado:
                                 st.success(f"Você assumiu o plantão de {data_str} ({turno_str}) com sucesso!")
                                 st.rerun()
 else:
-    st.info("Faça login na barra lateral para acessar a escala de plantão(seta no canto superior esquerdo).")
+    st.info("Faça login na barra lateral para acessar a escala de plantão (seta no canto superior esquerdo).")
