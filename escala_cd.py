@@ -79,7 +79,6 @@ if st.sidebar.button("Entrar"):
                 st.session_state.autenticado = True
                 st.session_state.nome_usuario = nome_usuario
                 st.sidebar.success(f"Bem-vindo, {nome_usuario}!")
-                st.experimental_set_query_params()
                 st.rerun()
         else:
             st.sidebar.error("Senha incorreta.")
