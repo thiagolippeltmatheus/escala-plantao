@@ -6,9 +6,17 @@ from gspread_dataframe import get_as_dataframe, set_with_dataframe
 from datetime import datetime, timedelta
 import streamlit as st
 
+import os
+
 def conectar_gspread():
-    credenciais_info = json.loads(st.secrets["CREDENCIAIS_JSON"])
-    credenciais_info["private_key"] = credenciais_info["private_key"].replace("\n", "\n")
+    if "CREDENCIAIS_JSON" in st.secrets:
+        credenciais_info = json.loads(st.secrets["CREDENCIAIS_JSON"])
+    elif "CREDENCIAIS_JSON" in os.environ:
+        credenciais_info = json.loads(os.environ["CREDENCIAIS_JSON"])
+    else:
+        raise ValueError("Credenciais não encontradas em st.secrets nem em os.environ")
+
+    credenciais_info["private_key"] = credenciais_info["private_key"].replace("\\n", "\n")
 
     temp_file = tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".json")
     json.dump(credenciais_info, temp_file)
