@@ -9,7 +9,7 @@ import streamlit as st
 import os
 
 def conectar_gspread():
-    if "CREDENCIAIS_JSON" in st.secrets:
+    if hasattr(st, "secrets") and "CREDENCIAIS_JSON" in st.secrets:
         credenciais_info = json.loads(st.secrets["CREDENCIAIS_JSON"])
     elif "CREDENCIAIS_JSON" in os.environ:
         credenciais_info = json.loads(os.environ["CREDENCIAIS_JSON"])
