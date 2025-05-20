@@ -24,8 +24,6 @@ jobs:
 
       - name: Rodar o script
         env:
-          STREAMLIT_SECRETS: ${{ secrets.CREDENCIAIS_JSON }}
+          CREDENCIAIS_JSON: ${{ secrets.CREDENCIAIS_JSON }}
         run: |
-          echo "$STREAMLIT_SECRETS" > secrets.json
-          export STREAMLIT_SECRETS="$(cat secrets.json)"
           python gera_plantao.py
