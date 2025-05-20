@@ -4,18 +4,13 @@ import json
 import tempfile
 from gspread_dataframe import get_as_dataframe, set_with_dataframe
 from datetime import datetime, timedelta
-import streamlit as st
-
 import os
 
 def conectar_gspread():
-    if hasattr(st, "secrets") and "CREDENCIAIS_JSON" in st.secrets:
-        credenciais_info = json.loads(st.secrets["CREDENCIAIS_JSON"])
-    elif "CREDENCIAIS_JSON" in os.environ:
-        credenciais_info = json.loads(os.environ["CREDENCIAIS_JSON"])
-    else:
-        raise ValueError("Credenciais não encontradas em st.secrets nem em os.environ")
+    if "CREDENCIAIS_JSON" not in os.environ:
+        raise ValueError("CREDENCIAIS_JSON não encontrado no ambiente.")
 
+    credenciais_info = json.loads(os.environ["CREDENCIAIS_JSON"])
     credenciais_info["private_key"] = credenciais_info["private_key"].replace("\\n", "\n")
 
     temp_file = tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".json")
@@ -26,14 +21,11 @@ def conectar_gspread():
     gc = gspread.service_account(filename=temp_file.name)
     return gc
 
-# Nomes das planilhas
 NOME_PLANILHA_ESCALA = 'Escala_Maio_2025'
 NOME_PLANILHA_FIXOS = 'Plantonistas_Fixos_Completo_real'
 
-# Conectar ao Google Sheets
 gc = conectar_gspread()
 
-# Utilitários
 def carregar_planilha(nome_planilha):
     sh = gc.open(nome_planilha)
     worksheet = sh.sheet1
@@ -64,13 +56,11 @@ def atualizar_escala_proximos_30_dias():
 
     df_fixos, _ = carregar_planilha(NOME_PLANILHA_FIXOS)
 
-    # Limpeza dos nomes dos dias da semana e turnos
     df_fixos["Dia da Semana Limpo"] = df_fixos["Dia da Semana"].str.extract(r"(\w+)", expand=False).str.lower()
     df_fixos["Turno Limpo"] = df_fixos["Turno"].astype(str).str.replace('\xa0', '', regex=False).str.strip().str.lower()
 
     hoje = datetime.today().date()
     dias_novos = []
-
     dias_semana = ["segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo"]
     turnos = ["manhã", "tarde", "noite", "cinderela"]
 
