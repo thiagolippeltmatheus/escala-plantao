@@ -19,6 +19,7 @@ def conectar_gspread():
     temp_file.close()
     return gspread.service_account(filename=temp_file.name)
 
+@st.cache_data(ttl=60)
 def carregar_planilha(nome_planilha):
     sh = gc.open(nome_planilha)
     worksheet = sh.sheet1
@@ -28,6 +29,17 @@ def carregar_planilha(nome_planilha):
 def salvar_planilha(df, worksheet):
     worksheet.clear()
     set_with_dataframe(worksheet, df)
+
+def get_escala_em_tempo_real(nome_planilha):
+    try:
+        sh = gc.open(nome_planilha)
+        worksheet = sh.sheet1
+        df = get_as_dataframe(worksheet).dropna(how="all")
+        return df, worksheet
+    except Exception as e:
+        st.error("⚠️ Estamos com muitos acessos neste momento. Por favor, tente novamente em 1 a 2 minutos.")
+        st.stop()
+
 
 def tratar_campo(valor):
     try:
@@ -109,7 +121,7 @@ st.title("Escala de Plantão")
 
 if autenticado:
     try:
-        df, ws_escala = carregar_planilha(NOME_PLANILHA_ESCALA)
+        df, ws_escala = get_escala_em_tempo_real(NOME_PLANILHA_ESCALA)
     except Exception as e:
         st.error(f"Erro ao carregar escala: {e}")
         st.stop()
