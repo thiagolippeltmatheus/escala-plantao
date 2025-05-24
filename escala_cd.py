@@ -87,7 +87,7 @@ def mostrar_notificacoes(nome_usuario, df):
 
 # Nomes das planilhas
 NOME_PLANILHA_ESCALA = 'Escala_Maio_2025'
-NOME_PLANILHA_USUARIOS = 'usuarios'
+NOME_PLANILHA_FIXOS = 'Plantonistas_Fixos_Completo_real'
 
 # Conecta e carrega planilhas
 gc = conectar_gspread()
