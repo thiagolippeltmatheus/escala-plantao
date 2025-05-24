@@ -1,4 +1,4 @@
-
+import unicodedata
 import streamlit as st
 import pandas as pd
 import gspread
@@ -6,6 +6,7 @@ import json
 import tempfile
 from gspread_dataframe import get_as_dataframe, set_with_dataframe
 from datetime import date
+import unicodedata
 
 turnos_disponiveis = ["manhã", "tarde", "noite", "cinderela"]
 
@@ -46,6 +47,43 @@ def tratar_campo(valor):
         return str(int(float(valor))).strip()
     except:
         return str(valor).strip()
+
+
+def mostrar_notificacoes(nome_usuario, df):
+    # Obter CRM do usuário logado como string
+    crm_usuario = str(int(df_usuarios[df_usuarios["nome"] == nome_usuario]["crm"].values[0]))
+
+    def formatar_crm_original(valor):
+        try:
+            return str(int(float(valor)))
+        except:
+            return ""
+
+    # Corrigir e padronizar coluna 'crm original'
+    df["crm original"] = df["crm original"].apply(formatar_crm_original)
+
+    # Filtrar notificações para o CRM do usuário
+    df_notif = df[df["crm original"] == crm_usuario]
+
+    
+
+    # Converter e filtrar datas válidas
+    df_notif["data"] = pd.to_datetime(df_notif["data"], errors="coerce").dt.date
+    df_notif = df_notif[df_notif["data"].notna()]
+    hoje = date.today()
+    df_notif = df_notif[df_notif["data"] >= hoje]
+
+    # Exibir notificações
+    if df_notif.empty:
+        st.info("Você não possui notificações.")
+    else:
+        st.subheader("🔔 Suas notificações:")
+        for _, row in df_notif.iterrows():
+            data_str = row["data"].strftime("%d/%m/%Y")
+            turno_str = row["turno"].capitalize()
+            quem_pegou = row["nome"]
+            st.markdown(f"- {quem_pegou} pegou seu plantão do dia {data_str} turno {turno_str}")
+
 
 # Nomes das planilhas
 NOME_PLANILHA_ESCALA = 'Escala_Maio_2025'
@@ -129,7 +167,12 @@ if autenticado:
     df["data"] = pd.to_datetime(df["data"], dayfirst=True).dt.date
     df["turno"] = df["turno"].str.lower()
 
-    aba_calendario, aba_mural = st.tabs(["📅 Calendário", "📌 Mural de Vagas"])
+
+
+    aba_calendario, aba_mural, aba_notificacoes = st.tabs(["📅 Calendário", "📌 Mural de Vagas", "🔔 Notificações"])
+
+    with aba_notificacoes:
+        mostrar_notificacoes(nome_usuario, df)
 
     with aba_calendario:
         data_plantoa = st.date_input("Selecione a data do plantão", format="DD/MM/YYYY")
@@ -184,7 +227,10 @@ if autenticado:
                             st.info("Você já está escalado neste turno.")
                     elif status == "repasse" and not ja_escalado:
                         if st.button("Assumir", key=f"assumir_{idx}"):
+                            df.at[idx, "repassado por"] = df.at[idx, "nome"]
+                            df.at[idx, "crm original"] = df.at[idx, "crm"]
                             df.at[idx, "nome"] = nome_usuario
+                            df.at[idx, "crm"] = df_usuarios[df_usuarios['nome'] == nome_usuario]["crm"].values[0]
                             df.at[idx, "status"] = "extra"
                             salvar_planilha(df, ws_escala)
                             st.success("Você assumiu o plantão com sucesso!")
@@ -287,7 +333,10 @@ if autenticado:
                     elif status == "repasse":
                         if not ja_escalado:
                             if st.button("Assumir", key=f"assumir_mural_{idx}"):
+                                df.at[idx, "repassado por"] = df.at[idx, "nome"]
+                                df.at[idx, "crm original"] = df.at[idx, "crm"]
                                 df.at[idx, "nome"] = nome_usuario
+                                df.at[idx, "crm"] = df_usuarios[df_usuarios['nome'] == nome_usuario]["crm"].values[0]
                                 df.at[idx, "status"] = "extra"
                                 salvar_planilha(df, ws_escala)
                                 st.success(f"Você assumiu o plantão de {data_str} ({turno_str}) com sucesso!")
