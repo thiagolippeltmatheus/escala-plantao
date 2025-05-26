@@ -136,14 +136,15 @@ if st.sidebar.button("Entrar"):
         st.sidebar.error("Contate o chefe da escala para realizar o cadastro.")
 
 # Troca de senha
-# Troca de senha
 if st.session_state.modo_nova_senha:
     nova_senha = st.sidebar.text_input("Escolha uma nova senha (apenas números)", type="password")
     if nova_senha:
         if nova_senha.isdigit():
             df_usuarios.loc[df_usuarios["crm"] == tratar_campo(crm_input), "senha"] = nova_senha
             try:
-                _, ws_usuarios_atual = carregar_planilha(NOME_PLANILHA_USUARIOS)
+                gc_local = conectar_gspread()
+                sh_usuarios = gc_local.open(NOME_PLANILHA_USUARIOS)
+                ws_usuarios_atual = sh_usuarios.sheet1
                 salvar_planilha(df_usuarios, ws_usuarios_atual)
                 st.sidebar.success("Senha atualizada com sucesso. Refaça o login.")
                 st.session_state.modo_nova_senha = False
@@ -154,6 +155,7 @@ if st.session_state.modo_nova_senha:
                 st.stop()
         else:
             st.sidebar.error("A nova senha deve conter apenas números.")
+
 
 
 # Definir variáveis
