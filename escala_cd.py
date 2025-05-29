@@ -378,11 +378,24 @@ if autenticado:
         if df_filtrado.empty:
             st.info("Você não possui plantões neste mês.")
         else:
-            for _, row in df_filtrado.iterrows():
-                data_str = row["data"].strftime("%d/%m/%Y")
-                turno_str = row["turno"].capitalize()
-                status_str = row["status"] if pd.notna(row["status"]) else "sem status"
-                st.markdown(f"- 📆 **{data_str}** — 🕒 **{turno_str}** — 🏷️ *{status_str}*")
+            dias_em_portugues = {
+            "Monday": "segunda-feira",
+            "Tuesday": "terça-feira",
+            "Wednesday": "quarta-feira",
+            "Thursday": "quinta-feira",
+            "Friday": "sexta-feira",
+            "Saturday": "sábado",
+            "Sunday": "domingo"
+}
+
+        for _, row in df_filtrado.iterrows():
+            dia_semana_en = row["data"].strftime("%A")
+            dia_semana_pt = dias_em_portugues.get(dia_semana_en, dia_semana_en)
+            data_str = row["data"].strftime("%d/%m/%Y")
+            turno_str = row["turno"].capitalize()
+            status_str = row["status"] if pd.notna(row["status"]) else "sem status"
+            st.markdown(f"- 📆 **{data_str} ({dia_semana_pt})** — 🕒 **{turno_str}** — 🏷️ *{status_str}*")
+
 
 else:
     st.info("Faça login na barra lateral para acessar a escala de plantão (seta no canto superior esquerdo).")
