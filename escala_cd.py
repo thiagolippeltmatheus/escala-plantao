@@ -1,13 +1,4 @@
 import unicodedata
-
-
-def normalizar_nome(nome):
-    if not isinstance(nome, str):
-        return ""
-    nome_sem_acentos = unicodedata.normalize('NFKD', nome)
-    nome_sem_acentos = "".join(c for c in nome_sem_acentos if not unicodedata.combining(c))
-    return nome_sem_acentos.lower().strip()
-
 import streamlit as st
 import pandas as pd
 import gspread
@@ -60,7 +51,7 @@ def tratar_campo(valor):
 
 def mostrar_notificacoes(nome_usuario, df):
     # Obter CRM do usuário logado como string
-    crm_usuario = str(int(df_usuarios[df_usuarios["nome"].apply(normalizar_nome) == normalizar_nome(nome_usuario)]["crm"].values[0]))
+    crm_usuario = str(int(df_usuarios[df_usuarios["nome"] == nome_usuario]["crm"].values[0]))
 
     def formatar_crm_original(valor):
         try:
@@ -211,7 +202,7 @@ if autenticado:
         st.markdown(f"**Data selecionada:** {data_plantoa.strftime('%d/%m/%Y')} ({dia_semana_pt}) - **Turno:** {turno.capitalize()}")
 
         df_turno = df[(df["data"] == data_plantoa) & (df["turno"] == turno)]
-        df_usuario_turno = df_turno[df_turno["nome"].fillna("").apply(normalizar_nome) == normalizar_nome(nome_usuario)]
+        df_usuario_turno = df_turno[df_turno["nome"].fillna("").astype(str).str.lower().str.strip() == nome_usuario.lower().strip()]
 
         if df_turno.empty:
             st.warning("Nenhum plantonista encontrado para essa data e turno.")
@@ -234,7 +225,7 @@ if autenticado:
                 with col2:
                     ja_escalado = not df_usuario_turno.empty
                     if (status == "livre" or nome.strip().lower() == "vaga livre") and not ja_escalado:
-                        ja_escalado_mesmo_turno = not df[(df["data"] == data_plantoa) & (df["turno"] == turno) & (df["nome"].apply(normalizar_nome) == normalizar_nome(nome_usuario))].empty
+                        ja_escalado_mesmo_turno = not df[(df["data"] == data_plantoa) & (df["turno"] == turno) & (df["nome"].str.lower().str.strip() == nome_usuario.lower().strip())].empty
                         if not ja_escalado_mesmo_turno:
                             if st.button("Pegar vaga", key=f"pegar_{idx}"):
                                 df.at[idx, "nome"] = nome_usuario
@@ -254,13 +245,13 @@ if autenticado:
                             salvar_planilha(df, ws_escala)
                             st.success("Você assumiu o plantão com sucesso!")
                             st.rerun()
-                    elif normalizar_nome(nome_usuario) in normalizar_nome(nome) and status != "repasse":
+                    elif nome_usuario.strip().lower() in nome.strip().lower() and status != "repasse":
                         if st.button("Repassar", key=f"repassar_{idx}"):
                             df.at[idx, "status"] = "repasse"
                             salvar_planilha(df, ws_escala)
                             st.warning("Você colocou seu plantão para repasse.")
                             st.rerun()
-                    elif normalizar_nome(nome_usuario) in normalizar_nome(nome) and status == "repasse":
+                    elif nome_usuario.strip().lower() in nome.strip().lower() and status == "repasse":
                         if st.button("Cancelar repasse", key=f"cancelar_{idx}"):
                             df.at[idx, "status"] = "fixo"
                             salvar_planilha(df, ws_escala)
@@ -339,7 +330,7 @@ if autenticado:
                     ja_escalado = not df[
                         (df["data"] == row["data"]) &
                         (df["turno"] == row["turno"]) &
-                        (df["nome"].apply(normalizar_nome) == normalizar_nome(nome_usuario))
+                        (df["nome"].str.lower().str.strip() == nome_usuario.lower().strip())
                     ].empty
                     if status in ["livre"] or nome.strip().lower() == "vaga livre":
                         if not ja_escalado:
@@ -366,7 +357,7 @@ if autenticado:
         st.subheader("🗓️ Plantões do Usuário")
 
         # Filtro por mês
-        df_usuario = df[df["nome"].apply(normalizar_nome) == normalizar_nome(nome_usuario)]
+        df_usuario = df[df["nome"].str.lower().str.strip() == nome_usuario.lower().strip()]
         df_usuario["mes"] = pd.to_datetime(df_usuario["data"]).dt.to_period("M").astype(str)
 
         meses_disponiveis = sorted(df_usuario["mes"].unique(), reverse=True)
