@@ -64,7 +64,7 @@ def atualizar_escala_proximos_30_dias():
     dias_semana = ["segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo"]
     turnos = ["manhã", "tarde", "noite", "cinderela"]
 
-    for i in range(1, 31):
+    for i in range(1, 61):
         data = hoje + timedelta(days=i)
         dia_nome = dias_semana[data.weekday()]
         data_str = data.strftime("%d/%m/%Y")
