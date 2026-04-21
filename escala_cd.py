@@ -238,7 +238,7 @@ if autenticado:
                     elif status == "repasse" and not ja_escalado:
                         if st.button("Assumir", key=f"assumir_{idx}"):
                             df.at[idx, "repassado por"] = df.at[idx, "nome"]
-                            df.at[idx, "crm original"] = df.at[idx, "crm"]
+                            df.at[idx, "crm original"] = tratar_campo(df.at[idx, "crm"])
                             df.at[idx, "nome"] = nome_usuario
                             df.at[idx, "crm"] = df_usuarios[df_usuarios['nome'] == nome_usuario]["crm"].values[0]
                             df.at[idx, "status"] = "extra"
@@ -344,7 +344,7 @@ if autenticado:
                         if not ja_escalado:
                             if st.button("Assumir", key=f"assumir_mural_{idx}"):
                                 df.at[idx, "repassado por"] = df.at[idx, "nome"]
-                                df.at[idx, "crm original"] = df.at[idx, "crm"]
+                                df.at[idx, "crm original"] = tratar_campo(df.at[idx, "crm"])
                                 df.at[idx, "nome"] = nome_usuario
                                 df.at[idx, "crm"] = df_usuarios[df_usuarios['nome'] == nome_usuario]["crm"].values[0]
                                 df.at[idx, "status"] = "extra"
